@@ -1,0 +1,8 @@
+export type TeamMember = {
+  id: number
+  fullName: string
+  email: string
+  department?: string | null
+  designation?: string | null
+}
+
