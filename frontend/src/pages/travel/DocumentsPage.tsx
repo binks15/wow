@@ -135,8 +135,19 @@ export const DocumentsPage = () => {
 
   const onUpload = async (values: DocumentFormValues) => {
     setMessage("");
+    if (!values.travelId || Number(values.travelId) <= 0) {
+      setMessage("Please select a valid travel.");
+      return;
+    }
+
+    if (!values.documentType?.trim()) {
+      setMessage("Document type is required.");
+      return;
+    }
+
     const file = values.file?.item(0);
     if (!file) {
+      setMessage("File is required.");
       return;
     }
 

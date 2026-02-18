@@ -58,7 +58,8 @@ export const TravelDocumentUploadForm = ({
           type="hidden"
           {...register('travelId', {
             required: 'Travel is required.',
-            valueAsNumber: true
+            valueAsNumber: true,
+            min: { value: 1, message: 'Travel is required.' }
           })}
         />
         {isHr && watch('travelId') ? (
@@ -120,7 +121,8 @@ export const TravelDocumentUploadForm = ({
             error={errors.travelId?.message}
             {...register('travelId', {
               required: 'Travel ID is required.',
-              valueAsNumber: true
+              valueAsNumber: true,
+              min: { value: 1, message: 'Travel ID must be greater than 0.' }
             })}
           />
         )}
@@ -128,14 +130,18 @@ export const TravelDocumentUploadForm = ({
           label="Document type"
           error={errors.documentType?.message}
           {...register('documentType', {
-            required: 'Document type is required.'
+            required: 'Document type is required.',
+            validate: (value) => value.trim().length > 0 || 'Document type is required.'
           })}
         />
         <Input
           label="File"
           type="file"
           error={errors.file?.message}
-          {...register('file', { required: 'File is required.' })}
+          {...register('file', {
+            required: 'File is required.',
+            validate: (value) => (value?.length ?? 0) > 0 || 'File is required.'
+          })}
         />
         <div className="md:col-span-2">
           <Button

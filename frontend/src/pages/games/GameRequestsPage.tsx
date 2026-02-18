@@ -40,6 +40,8 @@ export const GameRequestsPage = () => {
   const cancelRequest = useCancelGameRequest()
   const queryClient = useQueryClient()
   const { userId } = useAuth()
+  const cardGridClass =
+    'grid gap-3 grid-cols-[repeat(auto-fill,minmax(300px,360px))] justify-center sm:justify-start'
 
   return (
     <section className="space-y-6">
@@ -75,7 +77,7 @@ export const GameRequestsPage = () => {
         <EmptyState title="No active requests" description="Request a slot to see it here." />
       ) : null}
 
-      <div className="grid gap-3 lg:grid-cols-2">
+      <div className={cardGridClass}>
         {(requestsQuery.data as GameRequestItem[] | undefined)?.map((request) => (
           <Card key={request.requestId} className="space-y-3 p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">

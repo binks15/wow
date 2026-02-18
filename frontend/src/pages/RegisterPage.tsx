@@ -64,7 +64,10 @@ export const RegisterPage = () => {
             <Input
               label="Full name"
               error={errors.fullName?.message}
-              {...register('fullName', { required: 'Full name is required.' })}
+              {...register('fullName', {
+                required: 'Full name is required.',
+                validate: (value) => value.trim().length > 0 || 'Full name is required.'
+              })}
             />
             <Input
               label="email"
@@ -82,7 +85,13 @@ export const RegisterPage = () => {
               label="Password"
               type="password"
               error={errors.password?.message}
-              {...register('password', { required: 'Password is required.', minLength: 6 })}
+              {...register('password', {
+                required: 'Password is required.',
+                minLength: {
+                  value: 6,
+                  message: 'Password must be at least 6 characters.'
+                }
+              })}
             />
             <Select
               label="Role"

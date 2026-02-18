@@ -5,12 +5,18 @@ using backend.Services.Common;
 
 namespace backend.Services.Games;
 
+/// <summary>
+/// Allocates game slots, creates bookings, updates history, and sends notifications.
+/// </summary>
 public class GameAllocationService
 {
     private readonly IGameAllocationRepository _repository;
     private readonly NotificationService _notifications;
     private readonly EmailService _email;
 
+    /// <summary>
+    /// Initializes allocation dependencies used for data access, in-app notifications, and emails.
+    /// </summary>
     public GameAllocationService(
         IGameAllocationRepository repository,
         NotificationService notifications,
@@ -22,7 +28,9 @@ public class GameAllocationService
         _email = email;
     }
 
-    //for background job - change status of immediate(after 1 hour) slot to pending 
+    /// <summary>
+    /// Allocates requests for slots that are about to start in the next hour from the background worker.
+    /// </summary>
     public async Task AllocateSlotsAsync(DateTime localNow)
     {
         var windowStart = localNow.AddMinutes(55);
@@ -41,20 +49,26 @@ public class GameAllocationService
         }
     }
 
-    // for requesting in immediate slot
+    /// <summary>
+    /// Triggers immediate allocation when a request is made for a near-future slot.
+    /// </summary>
     public async Task AllocatePendingForSlotAsync(GameSlot slot, DateTime localNow)
     {
         await AllocateSlotAsync(slot, localNow, GameSlotRequestStatus.Pending);
     }
 
-    // for running booking allocation logic on waitlist slot
+    /// <summary>
+    /// Refills a cancelled slot by allocating from waitlisted requests.
+    /// </summary>
     public async Task FillSlotFromWaitlistAsync(GameSlot slot)
     {
-        var localNow = DateTime.UtcNow;
+        var localNow = DateTime.Now;
         await AllocateSlotAsync(slot, localNow, GameSlotRequestStatus.Waitlisted);
     }
 
-    // logic for what to do after allocation of slot like add entry in booking table and add booking participants
+    /// <summary>
+    /// Executes the full slot allocation flow: select winners, create booking, update request states, and notify users.
+    /// </summary>
     private async Task AllocateSlotAsync(GameSlot slot, DateTime localNow, GameSlotRequestStatus sourceStatus)
     {
         if (slot.Game is null)
@@ -123,7 +137,9 @@ public class GameAllocationService
         await NotifyAllocationAsync(slot, allocation.AssignedUserIds);
     }
 
-    // main logic behind slot allocation - check requests->check cycle->give rank->return result
+    /// <summary>
+    /// Builds allocation result by ranking requests with cycle history and daily booking constraints.
+    /// </summary>
     private async Task<AllocationResult> BuildAllocationAsync(GameSlot slot, IReadOnlyCollection<GameSlotRequest> requests)
     {
         var requestUserSets = requests.Select(r => new
@@ -197,7 +213,9 @@ public class GameAllocationService
         );
     }
 
-    // for adding data in game history table
+    /// <summary>
+    /// Updates existing game history or creates new history records for users who got allocated.
+    /// </summary>
     private async Task UpdateHistoryAsync(GameSlot slot, DateTime cycleStart, IReadOnlyCollection<long> userIds)
     {
         var cycleEnd = DateTime.MaxValue;
@@ -233,7 +251,9 @@ public class GameAllocationService
         }
     }
 
-    // for in app notification and email notification
+    /// <summary>
+    /// Sends in-app and email notifications to users whose slot request was allocated.
+    /// </summary>
     private async Task NotifyAllocationAsync(GameSlot slot, IReadOnlyCollection<long> userIds)
     {
         if (userIds.Count == 0)

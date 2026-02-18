@@ -28,9 +28,12 @@ export const TravelCreateForm = ({
   const {
     register,
     handleSubmit,
+    watch,
     control,
     formState: { errors }
   } = form
+
+  const startDateValue = watch('startDate')
 
   return (
     <Card className="space-y-4">
@@ -43,14 +46,16 @@ export const TravelCreateForm = ({
           label="Travel name"
           error={errors.travelName?.message}
           {...register('travelName', {
-            required: 'Travel name is required.'
+            required: 'Travel name is required.',
+            validate: (value) => value.trim().length > 0 || 'Travel name is required.'
           })}
         />
         <Input
           label="Destination"
           error={errors.destination?.message}
           {...register('destination', {
-            required: 'Destination is required.'
+            required: 'Destination is required.',
+            validate: (value) => value.trim().length > 0 || 'Destination is required.'
           })}
         />
         <Input label="Purpose" {...register('purpose')} />
@@ -88,7 +93,17 @@ export const TravelCreateForm = ({
           label="End date"
           type="date"
           error={errors.endDate?.message}
-          {...register('endDate', { required: 'End date is required.' })}
+          {...register('endDate', {
+            required: 'End date is required.',
+            validate: (value) => {
+              if (!startDateValue || !value) {
+                return true
+              }
+              return new Date(value) >= new Date(startDateValue)
+                ? true
+                : 'End date must be on or after start date.'
+            }
+          })}
         />
         <div className="md:col-span-2">
           <Button

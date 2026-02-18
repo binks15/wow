@@ -2,9 +2,14 @@ using backend.Entities.Games;
 
 namespace backend.Services.Games;
 
+/// <summary>
+/// Updates a slot status to open or locked based on current time.
+/// </summary>
 public static class GameSlotAvailabilityService
 {
-    // checking condition for changing status of slot based on time 
+    /// <summary>
+    /// Updates slot status between open and locked based on current time, and ignores booked or cancelled slots.
+    /// </summary>
     public static bool UpdateSlotAvailability(GameSlot slot, DateTime localNow)
     {
         if (slot.Status == GameSlotStatus.Booked || slot.Status == GameSlotStatus.Cancelled)
@@ -12,7 +17,7 @@ public static class GameSlotAvailabilityService
             return false;
         }
 
-        var shouldLock = slot.StartTime <= localNow.AddMinutes(1);
+        var shouldLock = slot.StartTime <= localNow;
         if (shouldLock && slot.Status == GameSlotStatus.Open)
         {
             slot.Status = GameSlotStatus.Locked;

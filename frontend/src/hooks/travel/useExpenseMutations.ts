@@ -2,7 +2,7 @@ import { useMutation } from '@tanstack/react-query'
 import { apiClient } from '../../config/axios'
 import type { ExpenseItem } from '../../types/expense'
  
-type CreateDraftPayload = {
+type CreateExpensePayload = {
   assignId: number
   categoryId: number
   amount: number
@@ -10,17 +10,9 @@ type CreateDraftPayload = {
   expenseDate: string
 }
  
-type UpdateDraftPayload = {
-  expenseId: number
-  categoryId: number
-  amount: number
-  currency: string
-  expenseDate: string
-}
- 
-export const useCreateExpenseDraft = () =>
+export const useCreateExpense = () =>
   useMutation({
-    mutationFn: async (payload: CreateDraftPayload) => {
+    mutationFn: async (payload: CreateExpensePayload) => {
       const response = await apiClient.post<ExpenseItem>('/api/v1/expenses', payload)
       return response.data?.data ?? response.data
     }
@@ -42,28 +34,6 @@ export const useSubmitExpense = () =>
     mutationFn: async (expenseId: number) => {
       const response = await apiClient.post<ExpenseItem>(`/api/v1/expenses/${expenseId}/submit`)
       return response.data?.data  ?? response.data
-    }
-  })
- 
-export const useUpdateExpenseDraft = () =>
-  useMutation({
-    mutationFn: async ({ expenseId, ...payload }: UpdateDraftPayload) => {
-      const response = await apiClient.put<ExpenseItem>(`/api/v1/expenses/${expenseId}`, payload)
-      return response.data?.data ?? response.data
-    }
-  })
- 
-export const useDeleteExpenseDraft = () =>
-  useMutation({
-    mutationFn: async (expenseId: number) => {
-      await apiClient.delete(`/api/v1/expenses/${expenseId}`)
-    }
-  })
- 
-export const useDeleteExpenseProof = () =>
-  useMutation({
-    mutationFn: async ({ expenseId, proofId }: { expenseId: number; proofId: number }) => {
-      await apiClient.delete(`/api/v1/expenses/${expenseId}/proofs/${proofId}`)
     }
   })
  

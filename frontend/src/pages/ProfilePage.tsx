@@ -102,6 +102,11 @@ export const ProfilePage = () => {
       return;
     }
 
+    if (!avatarFile.type.startsWith("image/")) {
+      setAvatarMessage("Please select a valid image file.");
+      return;
+    }
+
     setAvatarMessage("");
     const updated = await uploadAvatar.mutateAsync(avatarFile);
     if (updated) {
@@ -190,10 +195,21 @@ export const ProfilePage = () => {
               error={form.formState.errors.fullName?.message}
               {...form.register("fullName", {
                 required: "Full name is required.",
+                validate: (value) =>
+                  value.trim().length > 0 || "Full name is required.",
               })}
             />
             <Input label="Email" value={profileQuery.data.email} disabled />
-            <Input label="Phone" {...form.register("phone")} />
+            <Input
+              label="Phone"
+              error={form.formState.errors.phone?.message}
+              {...form.register("phone", {
+                validate: (value) =>
+                  !value || /^[0-9+\-()\s]{7,15}$/.test(value)
+                    ? true
+                    : "Enter a valid phone number.",
+              })}
+            />
             <Input
               label="Role"
               value={profileQuery.data.role ?? "—"}
@@ -202,7 +218,13 @@ export const ProfilePage = () => {
             <Input
               label="Date of birth"
               type="date"
-              {...form.register("dateOfBirth")}
+              error={form.formState.errors.dateOfBirth?.message}
+              {...form.register("dateOfBirth", {
+                validate: (value) =>
+                  !value || new Date(value) <= new Date()
+                    ? true
+                    : "Date of birth cannot be in the future.",
+              })}
             />
             <Input
               label="Date of joining"
@@ -214,8 +236,22 @@ export const ProfilePage = () => {
               value={profileQuery.data.manager ?? "—"}
               disabled
             />
-            <Input label="Department" {...form.register("department")} />
-            <Input label="Designation" {...form.register("designation")} />
+            <Input
+              label="Department"
+              error={form.formState.errors.department?.message}
+              {...form.register("department", {
+                validate: (value) =>
+                  !value || value.trim().length > 0 || "Department cannot be empty.",
+              })}
+            />
+            <Input
+              label="Designation"
+              error={form.formState.errors.designation?.message}
+              {...form.register("designation", {
+                validate: (value) =>
+                  !value || value.trim().length > 0 || "Designation cannot be empty.",
+              })}
+            />
             <div className="md:col-span-2">
               <Button type="submit" disabled={updateProfile.isPending}>
                 {updateProfile.isPending ? "Saving..." : "Save changes"}

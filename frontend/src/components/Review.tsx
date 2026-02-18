@@ -39,7 +39,10 @@ export const Review = ({ expenseId, onReview, isPending }: ReviewControlsProps) 
         placeholder="Add remarks for rejection"
         error={errors.remarks?.message}
         {...register('remarks', {
-          validate: (value) => (status === 'Rejected' && !value ? 'Remarks are required for rejection.' : true)
+          validate: (value) =>
+            status === 'Rejected' && !value?.trim()
+              ? 'Remarks are required for rejection.'
+              : true
         })}
       />
       <button

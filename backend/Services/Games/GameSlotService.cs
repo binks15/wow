@@ -5,15 +5,24 @@ using backend.Repositories.Games;
 
 namespace backend.Services.Games;
 
-public class GameSlotService 
+/// <summary>
+/// Generates game slots and provides slot lists with current availability.
+/// </summary>
+public class GameSlotService
 {
     private readonly IGameSlotRepository _repository;
 
+    /// <summary>
+    /// Initializes slot service dependencies used to generate and query game slots.
+    /// </summary>
     public GameSlotService(IGameSlotRepository repository)
     {
         _repository = repository;
     }
 
+    /// <summary>
+    /// Generates missing slots for each day in the date range based on game operating hours and slot duration.
+    /// </summary>
     public async Task<IReadOnlyCollection<GameSlotDto>> GenerateSlotsAsync(long gameId, DateTime startDate, DateTime endDate)
     {
         var game = await _repository.GetGameByIdAsync(gameId);
@@ -76,10 +85,13 @@ public class GameSlotService
         return slots.Select(s => new GameSlotDto(s.SlotId, s.GameId, s.StartTime, s.EndTime, s.Status)).ToList();
     }
 
+    /// <summary>
+    /// Returns slots for one date and refreshes open or locked status using current local time.
+    /// </summary>
     public async Task<IReadOnlyCollection<GameSlotDto>> GetSlotsForDateAsync(long gameId, DateTime date)
     {
         var slots = await _repository.GetSlotsForDateAsync(gameId, date);
-        var localNow =DateTime.UtcNow;
+        var localNow = DateTime.Now;
         var shouldSave = false;
 
         foreach (var slot in slots)
@@ -95,6 +107,9 @@ public class GameSlotService
         return slots.Select(s => new GameSlotDto(s.SlotId, s.GameId, s.StartTime, s.EndTime, s.Status)).ToList();
     }
 
+    /// <summary>
+    /// Returns upcoming slots with participant details and updates real-time availability before responding.
+    /// </summary>
     public async Task<IReadOnlyCollection<GameSlotSummaryDto>> GetUpcomingSlotsAsync(long gameId, DateTime fromUtc, DateTime toUtc)
     {
         var slots = await _repository.GetSlotsInRangeAsync(gameId, fromUtc, toUtc);
@@ -104,7 +119,7 @@ public class GameSlotService
             return Array.Empty<GameSlotSummaryDto>();
         }
 
-        var localNow = DateTime.UtcNow;
+        var localNow = DateTime.Now;
         var shouldSave = false;
         foreach (var slot in slots)
         {

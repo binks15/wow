@@ -79,6 +79,8 @@ export const ExpenseConfigPage = () => {
               error={categoryErrors.categoryName?.message}
               {...registerCategory("categoryName", {
                 required: "Category name is required.",
+                validate: (value) =>
+                  value.trim().length > 0 || "Category name is required.",
               })}
             />
             <Input

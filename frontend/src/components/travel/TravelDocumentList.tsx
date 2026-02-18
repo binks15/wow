@@ -40,7 +40,7 @@ export const TravelDocumentList = ({
   isSaving,
   isDeleting
 }: TravelDocumentListProps) => (
-  <div className="grid gap-3  md:grid-cols-2 xl:grid-cols-3 ">
+  <div className="grid gap-3 grid-cols-[repeat(auto-fill,minmax(280px,320px))] justify-center sm:justify-start">
     {documents.map((doc) => {
       const isEditing = Boolean(editDocs[doc.documentId])
 

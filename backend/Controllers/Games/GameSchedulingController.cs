@@ -54,7 +54,7 @@ public class GameSchedulingController : ControllerBase
     [HttpGet("{gameId:long}/slots/today")]
     public async Task<IActionResult> GetTodaySlots(long gameId)
     {
-        var result = await _slotService.GetSlotsForDateAsync(gameId, DateTime.UtcNow);
+        var result = await _slotService.GetSlotsForDateAsync(gameId, DateTime.Now);
         return Ok(new ApiResponse<object>
         {
             Success = true,
@@ -175,7 +175,7 @@ public class GameSchedulingController : ControllerBase
     [HttpGet("{gameId:long}/slots/upcoming")]
     public async Task<IActionResult> GetUpcomingSlots(long gameId, [FromQuery] int days = 7)
     {
-        var fromLocal = DateTime.UtcNow;
+        var fromLocal = DateTime.Now;
         var toLocal = fromLocal.AddDays(Math.Max(1, days));
         var result = await _slotService.GetUpcomingSlotsAsync(gameId, fromLocal, toLocal);
         return Ok(new ApiResponse<object>
@@ -201,7 +201,7 @@ public class GameSchedulingController : ControllerBase
             });
         }
 
-        var fromLocal = DateTime.UtcNow;
+        var fromLocal = DateTime.Now;
         var toLocal = fromLocal.AddDays(Math.Max(1, days));
         var result = await _bookingService.GetMyBookingsAsync(userId.Value, fromLocal, toLocal);
         return Ok(new ApiResponse<object>
@@ -227,7 +227,7 @@ public class GameSchedulingController : ControllerBase
             });
         }
 
-        var fromLocal = DateTime.UtcNow;
+        var fromLocal = DateTime.Now;
         var toLocal = fromLocal.AddDays(Math.Max(1, days));
         var result = await _requestService.GetMyRequestsAsync(userId.Value, fromLocal, toLocal);
         return Ok(new ApiResponse<object>

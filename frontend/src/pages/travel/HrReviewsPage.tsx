@@ -61,9 +61,15 @@ export const HrReviewsPage = () => {
     from: filters.from || undefined,
     to: filters.to || undefined
   }
+  const isValidFilterRange =
+    !normalizedFilters.from ||
+    !normalizedFilters.to ||
+    new Date(normalizedFilters.from) <= new Date(normalizedFilters.to)
  
-  const hrExpenses = useHrExpenses(normalizedFilters)
+  const hrExpenses = useHrExpenses(normalizedFilters, isValidFilterRange)
   const reviewExpense = useReviewExpense()
+  const cardGridClass =
+    'grid gap-3 grid-cols-[repeat(auto-fill,minmax(320px,420px))] justify-center sm:justify-start'
  
   const handleReview = async (expenseId: number, values: ReviewFormValues) => {
     await reviewExpense.mutateAsync({
@@ -126,6 +132,9 @@ export const HrReviewsPage = () => {
           <Input label="From" type="date" {...register('from')} />
           <Input label="To" type="date" {...register('to')} />
         </div>
+        {!isValidFilterRange ? (
+          <p className="text-sm text-red-600">From date must be on or before To date.</p>
+        ) : null}
       </Card>
  
       {hrExpenses.isLoading ? (
@@ -141,7 +150,7 @@ export const HrReviewsPage = () => {
       ) : null}
  
       {hrExpenses.data?.length ? (
-        <div className="grid gap-3 xl:grid-cols-2">
+        <div className={cardGridClass}>
           {(hrExpenses.data as ReviewExpenseItem[]).map((expense) => (
             <Card key={expense.expenseId} className="flex h-full flex-col gap-3 p-4 md:flex-row md:items-start md:justify-between">
               <div>

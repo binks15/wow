@@ -60,7 +60,11 @@ export const ExpenseSubmitForm = ({
       <form className="grid gap-4 md:grid-cols-2" onSubmit={handleSubmit(onSubmit)}>
         <input
           type="hidden"
-          {...register('assignId', { required: 'Assignment is required.', valueAsNumber: true })}
+          {...register('assignId', {
+            required: 'Assignment is required.',
+            valueAsNumber: true,
+            min: { value: 1, message: 'Assignment is required.' }
+          })}
         />
         <SearchableSelect
           label="Assignment"
@@ -88,7 +92,11 @@ export const ExpenseSubmitForm = ({
         <Select
           label="Category"
           error={errors.categoryId?.message}
-          {...register('categoryId', { required: 'Category is required.', valueAsNumber: true })}
+          {...register('categoryId', {
+            required: 'Category is required.',
+            valueAsNumber: true,
+            min: { value: 1, message: 'Category is required.' }
+          })}
         >
           <option value="">Select category</option>
           {categories?.map((category) => (
@@ -111,7 +119,10 @@ export const ExpenseSubmitForm = ({
         <Input
           label="Currency"
           error={errors.currency?.message}
-          {...register('currency', { required: 'Currency is required.' })}
+          {...register('currency', {
+            required: 'Currency is required.',
+            validate: (value) => /^[A-Za-z]{3}$/.test(value.trim()) || 'Use a 3-letter currency code.'
+          })}
         />
         <Input
           label="Expense date"
@@ -144,7 +155,10 @@ export const ExpenseSubmitForm = ({
           label="Proof file"
           type="file"
           error={errors.proof?.message}
-          {...register('proof', { required: 'Proof file is required.' })}
+          {...register('proof', {
+            required: 'Proof file is required.',
+            validate: (value) => (value?.length ?? 0) > 0 || 'Proof file is required.'
+          })}
         />
         <div className="md:col-span-2">
           <button

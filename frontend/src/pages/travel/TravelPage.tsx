@@ -12,6 +12,7 @@ import { useTeamMembers } from "../../hooks/travel/useManager";
 import {
   useAssignedTravels,
   useCreatedTravels,
+  useTravelAssignees,
   useTravelById,
 } from "../../hooks/travel/useTravel";
 import {
@@ -56,6 +57,10 @@ export const TravelsPage = () => {
   );
   const createdTravelsQuery = useCreatedTravels(isHr);
   const travelDetailQuery = useTravelById(
+    editingTravelId ?? undefined,
+    Boolean(editingTravelId) && isHr,
+  );
+  const travelAssigneesQuery = useTravelAssignees(
     editingTravelId ?? undefined,
     Boolean(editingTravelId) && isHr,
   );
@@ -116,6 +121,16 @@ export const TravelsPage = () => {
         }))
       : [];
 
+  const editEmployeeOptions = [
+    ...employeeOptions,
+    ...(travelAssigneesQuery.data ?? []),
+  ].reduce((accumulator, option) => {
+    if (!accumulator.some((item) => item.id === option.id)) {
+      accumulator.push(option);
+    }
+    return accumulator;
+  }, [] as typeof employeeOptions);
+
   const onCreateTravel = async (values: TravelCreateFormValues) => {
     setMessage("");
     if (!userId) {
@@ -125,6 +140,11 @@ export const TravelsPage = () => {
 
     if (!values.assignments?.length) {
       setMessage("Enter at least one employee ID to assign.");
+      return;
+    }
+
+    if (new Date(values.startDate) > new Date(values.endDate)) {
+      setMessage("End date must be on or after start date.");
       return;
     }
 
@@ -183,6 +203,16 @@ export const TravelsPage = () => {
 
   const onUpdateTravel = async (values: TravelEditFormValues) => {
     if (!editingTravelId) {
+      return;
+    }
+
+    if (!values.assignments?.length) {
+      setEditMessage("At least one employee must be assigned.");
+      return;
+    }
+
+    if (new Date(values.startDate) > new Date(values.endDate)) {
+      setEditMessage("End date must be on or after start date.");
       return;
     }
 
@@ -274,9 +304,10 @@ export const TravelsPage = () => {
           onCancelEdit={() => setEditingTravelId(null)}
           onViewDocuments={goToDocuments}
           isUpdating={updateTravel.isPending}
-          employeeOptions={employeeOptions}
+          employeeOptions={editEmployeeOptions}
           onSearch={setSearchQuery}
           isLoadingOptions={listLoading}
+          isEditLoading={travelDetailQuery.isLoading || travelAssigneesQuery.isLoading}
         />
       ) : null}
 

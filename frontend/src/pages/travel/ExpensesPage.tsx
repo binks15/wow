@@ -14,16 +14,13 @@ import {
   type ExpenseFilters as ExpenseQueryFilters,
 } from "../../hooks/travel/useExpenses";
 import {
-  useCreateExpenseDraft,
-  useDeleteExpenseDraft,
-  useDeleteExpenseProof,
+  useCreateExpense,
   useSubmitExpense,
-  useUpdateExpenseDraft,
   useUploadExpenseProof,
 } from "../../hooks/travel/useExpenseMutations";
 import { type ReviewFormValues } from "../../components/Review";
 import { useReviewExpense } from "../../hooks/travel/useExpenseReview";
-import { useTravelAssignments } from "../../hooks/travel/useTravel";
+import { useCreatedTravels, useTravelAssignments } from "../../hooks/travel/useTravel";
 import {
   ExpenseSubmitForm,
   type ExpenseFormValues,
@@ -32,10 +29,6 @@ import {
   ExpenseListItem,
   type Expense,
 } from "../../components/travel/ExpenseListItem";
-import {
-  DraftActions,
-  type DraftEditValues,
-} from "../../components/travel/DraftActions";
 import {
   ExpenseFiltersPanel,
   type ExpenseFilters as ExpenseFormFilters,
@@ -50,14 +43,6 @@ export const ExpensesPage = () => {
   const [submitMessageTone, setSubmitMessageTone] = useState<
     "success" | "error"
   >("success");
-  const [draftFiles, setDraftFiles] = useState<Record<number, File | null>>({});
-  const [draftMessages, setDraftMessages] = useState<Record<number, string>>(
-    {},
-  );
-  const [editingDraftId, setEditingDraftId] = useState<number | null>(null);
-  const [draftEdits, setDraftEdits] = useState<Record<number, DraftEditValues>>(
-    {},
-  );
   const [searchQuery, setSearchQuery] = useState("");
 
   const filterForm = useForm<ExpenseFormFilters>({
@@ -89,11 +74,16 @@ export const ExpensesPage = () => {
     from: filters.from || undefined,
     to: filters.to || undefined,
   };
+  const isValidFilterRange =
+    !normalizedFilters.from ||
+    !normalizedFilters.to ||
+    new Date(normalizedFilters.from) <= new Date(normalizedFilters.to);
 
   const myExpenses = isHr ? null : useMyExpenses();
-  const hrExpenses = useHrExpenses(normalizedFilters, isHr);
+  const hrExpenses = useHrExpenses(normalizedFilters, isHr && isValidFilterRange);
   const categoriesQuery = useExpenseCategories();
   const assignmentsQuery = useTravelAssignments(undefined, isEmployee);
+  const createdTravelsQuery = useCreatedTravels(isHr);
   const employeesQuery = useEmployeeSearch(
     searchQuery,
     isHr && searchQuery.length >= 2,
@@ -101,23 +91,53 @@ export const ExpensesPage = () => {
   const employeeOptions = employeesQuery.data ?? [];
 
   // Mutations
-  const createDraft = useCreateExpenseDraft();
+  const createExpense = useCreateExpense();
   const uploadProof = useUploadExpenseProof();
   const submitExpense = useSubmitExpense();
-  const updateDraft = useUpdateExpenseDraft();
-  const deleteDraft = useDeleteExpenseDraft();
-  const deleteProof = useDeleteExpenseProof();
   const reviewExpense = useReviewExpense();
 
   // Derived state
   const list = isHr ? hrExpenses.data : myExpenses?.data;
   const isLoading = isHr ? hrExpenses.isLoading : myExpenses?.isLoading;
   const isError = isHr ? hrExpenses.isError : myExpenses?.isError;
+  const hrPendingExpenses = isHr
+    ? (list ?? []).filter((expense: Expense) => expense.status === "Submitted")
+    : [];
+  const hrReviewedExpenses = isHr
+    ? (list ?? []).filter((expense: Expense) => expense.status !== "Submitted")
+    : [];
+  const expenseGridClass =
+    "grid gap-3 grid-cols-[repeat(auto-fill,minmax(280px,320px))] justify-center sm:justify-start";
 
   // Handlers
   const handleCreateExpense = async (values: ExpenseFormValues) => {
     setSubmitMessage("");
     setSubmitMessageTone("success");
+
+    if (!values.assignId || Number(values.assignId) <= 0) {
+      setSubmitMessageTone("error");
+      setSubmitMessage("Please select an assignment.");
+      return;
+    }
+
+    if (!values.categoryId || Number(values.categoryId) <= 0) {
+      setSubmitMessageTone("error");
+      setSubmitMessage("Please select a category.");
+      return;
+    }
+
+    if (!values.amount || Number(values.amount) <= 0) {
+      setSubmitMessageTone("error");
+      setSubmitMessage("Amount must be greater than 0.");
+      return;
+    }
+
+    if (!/^[A-Za-z]{3}$/.test(values.currency?.trim() ?? "")) {
+      setSubmitMessageTone("error");
+      setSubmitMessage("Use a valid 3-letter currency code.");
+      return;
+    }
+
     const proofFile = values.proof?.item(0);
     if (!proofFile) {
       setSubmitMessageTone("error");
@@ -126,7 +146,7 @@ export const ExpensesPage = () => {
     }
 
     try {
-      const draft = await createDraft.mutateAsync({
+      const createdExpense = await createExpense.mutateAsync({
         assignId: values.assignId!,
         categoryId: values.categoryId,
         amount: values.amount,
@@ -135,11 +155,11 @@ export const ExpensesPage = () => {
       });
 
       await uploadProof.mutateAsync({
-        expenseId: draft.expenseId,
+        expenseId: createdExpense.expenseId,
         file: proofFile,
       });
 
-      await submitExpense.mutateAsync(draft.expenseId);
+      await submitExpense.mutateAsync(createdExpense.expenseId);
       setSubmitMessageTone("success");
       setSubmitMessage("Expense submitted successfully!");
       expenseForm.reset();
@@ -164,132 +184,6 @@ export const ExpensesPage = () => {
     }
   };
 
-  const handleStartEditDraft = (expenseId: number) => {
-    const expense = list?.find((item: Expense) => item.expenseId === expenseId);
-    if (!expense) return;
-
-    setEditingDraftId(expenseId);
-    setDraftEdits((prev) => ({
-      ...prev,
-      [expenseId]: {
-        categoryId: expense.categoryId,
-        amount: expense.amount,
-        currency: expense.currency,
-        expenseDate: expense.expenseDate,
-      },
-    }));
-  };
-
-  const handleUpdateDraftField = (
-    expenseId: number,
-    field: keyof DraftEditValues,
-    value: string | number,
-  ) => {
-    setDraftEdits((prev) => ({
-      ...prev,
-      [expenseId]: {
-        ...prev[expenseId],
-        [field]: value,
-      },
-    }));
-  };
-
-  const handleSaveDraft = async (expenseId: number) => {
-    const payload = draftEdits[expenseId];
-    if (!payload) return;
-
-    if (
-      !payload.categoryId ||
-      !payload.amount ||
-      !payload.currency ||
-      !payload.expenseDate
-    ) {
-      setDraftMessage(expenseId, "Complete all draft fields before saving.");
-      return;
-    }
-
-    try {
-      await updateDraft.mutateAsync({
-        expenseId,
-        categoryId: Number(payload.categoryId),
-        amount: Number(payload.amount),
-        currency: payload.currency,
-        expenseDate: payload.expenseDate,
-      });
-
-      setEditingDraftId(null);
-      setDraftMessage(expenseId, "Draft saved successfully.");
-      await myExpenses?.refetch();
-    } catch (error) {
-      const apiMessage = axios.isAxiosError(error)
-        ? (
-            error.response?.data as
-              | { error?: string; message?: string }
-              | undefined
-          )?.error ||
-          (
-            error.response?.data as
-              | { error?: string; message?: string }
-              | undefined
-          )?.message
-        : undefined;
-      setDraftMessage(
-        expenseId,
-        apiMessage || "Unable to save draft. Please try again.",
-      );
-    }
-  };
-
-  const handleDeleteDraftExpense = async (expenseId: number) => {
-    if (!globalThis.confirm("Delete this draft expense?")) return;
-
-    try {
-      await deleteDraft.mutateAsync(expenseId);
-      await myExpenses?.refetch();
-    } catch (error) {
-      console.error("Error deleting draft:", error);
-    }
-  };
-
-  const handleUploadProofOnly = async (expenseId: number) => {
-    const file = draftFiles[expenseId];
-    if (!file) return;
-
-    try {
-      await uploadProof.mutateAsync({ expenseId, file });
-      setDraftFiles((prev) => ({ ...prev, [expenseId]: null }));
-      setDraftMessage(expenseId, "Proof uploaded successfully.");
-      await myExpenses?.refetch();
-    } catch (error) {
-      const apiMessage = axios.isAxiosError(error)
-        ? (
-            error.response?.data as
-              | { error?: string; message?: string }
-              | undefined
-          )?.error ||
-          (
-            error.response?.data as
-              | { error?: string; message?: string }
-              | undefined
-          )?.message
-        : undefined;
-      setDraftMessage(
-        expenseId,
-        apiMessage || "Unable to upload proof. Please try again.",
-      );
-    }
-  };
-
-  const handleDeleteProofFile = async (expenseId: number, proofId: number) => {
-    try {
-      if (!globalThis.confirm("Delete this proof?")) return;
-      await deleteProof.mutateAsync({ expenseId, proofId });
-      await myExpenses?.refetch();
-    } catch (error) {
-      console.error("Error deleting proof:", error);
-    }
-  };
-
   const handleReview = async (
     expenseId: number,
     formValues: ReviewFormValues,
@@ -306,9 +200,16 @@ export const ExpensesPage = () => {
     }
   };
 
-  const setDraftMessage = (expenseId: number, message: string) => {
-    setDraftMessages((prev) => ({ ...prev, [expenseId]: message }));
-  };
+  const renderExpenseCard = (expense: Expense) => (
+    <ExpenseListItem
+      key={expense.expenseId}
+      expense={expense}
+      isHr={isHr}
+      isEmployee={isEmployee}
+      onReview={handleReview}
+      reviewPending={reviewExpense.isPending}
+    />
+  );
 
   return (
     <section className="space-y-4">
@@ -327,7 +228,7 @@ export const ExpensesPage = () => {
             assignments={assignmentsQuery.data}
             isLoading={assignmentsQuery.isLoading}
             isSubmitting={
-              createDraft.isPending ||
+              createExpense.isPending ||
               uploadProof.isPending ||
               submitExpense.isPending
             }
@@ -339,13 +240,19 @@ export const ExpensesPage = () => {
 
       {/* HR filter panel */}
       {isHr ? (
-        <ExpenseFiltersPanel
-          control={filterForm.control}
-          register={filterForm.register}
-          employeeOptions={employeeOptions}
-          onSearch={setSearchQuery}
-          isLoadingOptions={employeesQuery.isLoading}
-        />
+        <>
+          <ExpenseFiltersPanel
+            control={filterForm.control}
+            register={filterForm.register}
+            employeeOptions={employeeOptions}
+            travelOptions={createdTravelsQuery.data ?? []}
+            onSearch={setSearchQuery}
+            isLoadingOptions={employeesQuery.isLoading}
+          />
+          {!isValidFilterRange ? (
+            <p className="text-sm text-red-600">From date must be on or before To date.</p>
+          ) : null}
+        </>
       ) : null}
 
       {/* Loading state */}
@@ -365,54 +272,51 @@ export const ExpensesPage = () => {
       ) : null}
 
       {/* Expense list */}
-      {list?.length ? (
-        <div className={`grid gap-3  md:grid-cols-2 xl:grid-cols-3`}>
-          {list.map((expense: Expense) => (
-            <ExpenseListItem
-              key={expense.expenseId}
-              expense={expense}
-              isHr={isHr}
-              isEmployee={isEmployee}
-              onReview={handleReview}
-              reviewPending={reviewExpense.isPending}
-            >
-              {/* Draft actions panel */}
-              {isEmployee && expense.status === "Draft" ? (
-                <DraftActions
-                  expenseId={expense.expenseId}
-                  isEditing={editingDraftId === expense.expenseId}
-                  editValues={draftEdits[expense.expenseId] || {}}
-                  draftMessage={draftMessages[expense.expenseId]}
-                  categories={categoriesQuery.data}
-                  proofs={expense.proofs}
-                  draftFile={draftFiles[expense.expenseId] || null}
-                  onStartEdit={() => handleStartEditDraft(expense.expenseId)}
-                  onFieldChange={(field, value) =>
-                    handleUpdateDraftField(expense.expenseId, field, value)
-                  }
-                  onSaveDraft={() => handleSaveDraft(expense.expenseId)}
-                  onCancelEdit={() => setEditingDraftId(null)}
-                  onDeleteDraft={() =>
-                    handleDeleteDraftExpense(expense.expenseId)
-                  }
-                  onUploadProof={() => handleUploadProofOnly(expense.expenseId)}
-                  onDeleteProof={(proofId) =>
-                    handleDeleteProofFile(expense.expenseId, proofId)
-                  }
-                  onFilePicked={(file) =>
-                    setDraftFiles((prev) => ({
-                      ...prev,
-                      [expense.expenseId]: file,
-                    }))
-                  }
-                  isUploadingProof={uploadProof.isPending}
-                  isSubmitting={submitExpense.isPending}
-                  isSaving={updateDraft.isPending}
-                  isDeleting={deleteDraft.isPending}
-                />
-              ) : null}
-            </ExpenseListItem>
-          ))}
+      {list?.length && isHr ? (
+        <div className="space-y-5">
+          <Card className="p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-slate-900">
+                Pending Review
+              </h3>
+              <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
+                {hrPendingExpenses.length}
+              </span>
+            </div>
+            {hrPendingExpenses.length ? (
+              <div className={expenseGridClass}>
+                {hrPendingExpenses.map((expense: Expense) =>
+                  renderExpenseCard(expense),
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-500">No pending expenses to review.</p>
+            )}
+          </Card>
+
+          <Card className="p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-slate-900">Reviewed</h3>
+              <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
+                {hrReviewedExpenses.length}
+              </span>
+            </div>
+            {hrReviewedExpenses.length ? (
+              <div className={expenseGridClass}>
+                {hrReviewedExpenses.map((expense: Expense) =>
+                  renderExpenseCard(expense),
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-500">No reviewed expenses yet.</p>
+            )}
+          </Card>
+        </div>
+      ) : null}
+
+      {list?.length && !isHr ? (
+        <div className={expenseGridClass}>
+          {list.map((expense: Expense) => renderExpenseCard(expense))}
         </div>
       ) : null}
 

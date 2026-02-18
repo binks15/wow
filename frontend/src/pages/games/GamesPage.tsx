@@ -73,6 +73,8 @@ export const GamesPage = () => {
     value: employee.id,
     label: `${employee.fullName} (${employee.email})`
   }))
+  const cardGridClass =
+    'grid gap-3 grid-cols-[repeat(auto-fill,minmax(260px,320px))] justify-center sm:justify-start'
 
   const onRequest = async () => {
     if (!selectedGameId || !selectedSlotId) {
@@ -193,7 +195,7 @@ export const GamesPage = () => {
           ) : null}
 
           {slotOptions.length ? (
-            <div className="grid gap-3 md:grid-cols-2">
+            <div className={cardGridClass}>
               {(slotsQuery.data ?? []).map((slot: GameSlot) => (
                 <button
                   key={slot.slotId}

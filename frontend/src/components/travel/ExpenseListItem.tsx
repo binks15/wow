@@ -32,6 +32,13 @@ const statusTone = (status: string) => {
   return "neutral";
 };
 
+const statusCardClass = (status: string) => {
+  if (status === "Submitted") return "border-amber-200 bg-amber-50/30";
+  if (status === "Approved") return "border-emerald-200 bg-emerald-50/30";
+  if (status === "Rejected") return "border-red-200 bg-red-50/30";
+  return "border-slate-200 bg-white";
+};
+
 export const ExpenseListItem = memo(
   ({
     expense,
@@ -40,50 +47,54 @@ export const ExpenseListItem = memo(
     reviewPending,
     children,
   }: ExpenseListItemProps) => (
-    <Card className="flex h-full flex-col gap-4 p-4">
-      <div className="flex flex-col gap-3  md:items-start md:justify-between">
-        <div className="flex flex-row items-center justify-between w-full">
-          <div>
-            <p className="text-sm font-semibold text-slate-900">
-              {formatCurrency(expense.amount, expense.currency)} ·{" "}
-              {formatDate(expense.expenseDate)}
-            </p>
-            {expense.proofs?.length ? (
-              <div className="text-xs flex gap-2 text-slate-900">
-                <span className="font-medium">Proofs:</span>
-                {expense.proofs.map((proof) => (
-                  <a
-                    key={proof.proofId}
-                    className="text-xs font-semibold underline text-blue-800 hover:text-blue-600"
-                    href={proof.filePath}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {proof.fileName || `Proof ${proof.proofId}`}
-                  </a>
-                ))}
-                {/* </div> */}
-              </div>
-            ) : (
-              <p className="text-xs text-slate-500">Proofs: none</p>
-            )}
-            {expense.remarks ? (
-              <p className="text-xs text-slate-500">
-                Remarks: {expense.remarks}
-              </p>
-            ) : null}
+    <Card className={`flex h-full flex-col gap-4 p-4 border ${statusCardClass(expense.status)}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-medium text-slate-500">Expense #{expense.expenseId}</p>
+          <p className="text-base font-semibold text-slate-900">
+            {formatCurrency(expense.amount, expense.currency)}
+          </p>
+          <p className="text-xs text-slate-600">{formatDate(expense.expenseDate)}</p>
+        </div>
+        <Badge tone={statusTone(expense.status)}>{expense.status}</Badge>
+      </div>
+
+      {expense.proofs?.length ? (
+        <div className="space-y-1">
+          <p className="text-xs font-medium text-slate-700">Proofs</p>
+          <div className="flex flex-wrap gap-2">
+            {expense.proofs.map((proof) => (
+              <a
+                key={proof.proofId}
+                className="text-xs font-semibold underline text-blue-800 hover:text-blue-600"
+                href={proof.filePath}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {proof.fileName || `Proof ${proof.proofId}`}
+              </a>
+            ))}
           </div>
-          <Badge tone={statusTone(expense.status)}>{expense.status}</Badge>
         </div>
-        <div className="flex flex-col items-start gap-3 ">
-          {isHr && expense.status === "Submitted" ? (
-            <Review
-              expenseId={expense.expenseId}
-              onReview={onReview}
-              isPending={reviewPending}
-            />
-          ) : null}
+      ) : (
+        <p className="text-xs text-slate-500">Proofs: none</p>
+      )}
+
+      {expense.remarks ? (
+        <div className="rounded-md bg-slate-50 px-3 py-2">
+          <p className="text-xs font-medium text-slate-700">Remarks</p>
+          <p className="text-xs text-slate-600">{expense.remarks}</p>
         </div>
+      ) : null}
+
+      <div className="flex flex-col items-start gap-3">
+        {isHr && expense.status === "Submitted" ? (
+          <Review
+            expenseId={expense.expenseId}
+            onReview={onReview}
+            isPending={reviewPending}
+          />
+        ) : null}
       </div>
       {children ? (
         <div className="border-t border-slate-200 pt-4">{children}</div>

@@ -158,7 +158,7 @@ export const Home = () => {
   );
 
   return (
-    <div className="min-h-screen bg-(--color-bg) text-(--color-dark)">
+    <div className="h-screen overflow-hidden bg-(--color-bg) text-(--color-dark) flex flex-col">
       <header className="border-b sticky top-0 z-50 w-screen border-slate-200 bg-(--color-primary) text-(--color-text)">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
           <div className="flex items-center gap-3">
@@ -207,7 +207,7 @@ export const Home = () => {
       ) : null}
 
       <aside
-        className={`fixed left-0 top-0 z-50 h-full w-72 transform bg-(--color-bg) p-6 shadow-xl transition-transform duration-200 md:hidden ${
+        className={`fixed left-0 top-0 z-50 h-full w-72 transform bg-(--color-bg) p-6 shadow-xl transition-transform duration-200 md:hidden flex flex-col ${
           isMenuOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -222,16 +222,15 @@ export const Home = () => {
             <IoCloseOutline size={20} />
           </button>
         </div>
-        <div className="mt-6 space-y-3">{navLinks}</div>
+        <div className="mt-6 min-h-0 flex-1 overflow-y-auto pr-1">{navLinks}</div>
       </aside>
 
-      <div className="mx-auto flex w-full max-w-6xl gap-6 px-4 py-6 sm:px-6">
+      <div className="mx-auto flex w-full max-w-6xl flex-1 min-h-0 gap-6 px-4 py-6 sm:px-6">
         <aside className="hidden w-64 shrink-0 flex-col gap-6 md:flex">
-
-          {navLinks}
+          <div className="h-full overflow-y-auto pr-1">{navLinks}</div>
         </aside>
 
-        <main className="min-w-0 flex-1">
+        <main className="min-w-0 flex-1 overflow-y-auto">
           <Outlet />
         </main>
       </div>

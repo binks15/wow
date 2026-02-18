@@ -5,12 +5,18 @@ using backend.Repositories.Games;
 
 namespace backend.Services.Games;
 
-public class GameRequestService 
+/// <summary>
+/// Validates, creates, and cancels user requests for game slots.
+/// </summary>
+public class GameRequestService
 {
     private readonly IGameRequestRepository _repository;
     private readonly GameAllocationService _allocationService;
     private readonly GameBookingService _bookingService;
 
+    /// <summary>
+    /// Initializes request service dependencies for slot validation, allocation, and cancellation handling.
+    /// </summary>
     public GameRequestService(
         IGameRequestRepository repository,
         GameAllocationService allocationService,
@@ -21,7 +27,9 @@ public class GameRequestService
         _bookingService = bookingService;
     }
 
-    // first check all validations and then request for a slot
+    /// <summary>
+    /// Validates all request rules, creates a slot request, and runs immediate allocation for near-term slots.
+    /// </summary>
     public async Task<GameSlotRequestDto> RequestSlotAsync(long gameId, long slotId, long requesterId, IReadOnlyCollection<long> participantIds)
     {
         var slot = await _repository.GetSlotWithGameAsync(gameId, slotId);
@@ -36,7 +44,7 @@ public class GameRequestService
             throw new ArgumentException("Slot is not available.");
         }
 
-        var now = DateTime.UtcNow;
+        var now = DateTime.Now;
         if (slot.StartTime < now)
         {
             throw new ArgumentException("Slot has already started.");
@@ -113,6 +121,9 @@ public class GameRequestService
         );
     }
 
+    /// <summary>
+    /// Cancels a user's request and also cancels booking if that request was already assigned.
+    /// </summary>
     public async Task CancelRequestAsync(long requestId, long requesterId)
     {
         var request = await _repository.GetSlotRequestByIdAsync(requestId);
@@ -142,6 +153,9 @@ public class GameRequestService
         await _repository.SaveAsync();
     }
 
+    /// <summary>
+    /// Returns active requests of a user in a date range with game, slot, and participant details.
+    /// </summary>
     public async Task<IReadOnlyCollection<GameSlotRequestSummaryDto>> GetMyRequestsAsync(long userId, DateTime from, DateTime to)
     {
         var requests = await _repository.GetActiveRequestsForUserAsync(userId, from, to);

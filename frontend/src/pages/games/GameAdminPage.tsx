@@ -93,6 +93,11 @@ export const GameAdminPage = () => {
       return
     }
 
+    if (new Date(startDate) > new Date(endDate)) {
+      setMessage('Generate start date must be on or before end date.')
+      return
+    }
+
     await generateSlots.mutateAsync({ gameId: editingGameId, startDate, endDate })
     setMessage('Slots generated successfully.')
   }
@@ -105,18 +110,54 @@ export const GameAdminPage = () => {
         <Card className="space-y-4">
           <h3 className="text-base font-semibold text-slate-900">Game configuration</h3>
           <form className="grid gap-4 md:grid-cols-2" onSubmit={form.handleSubmit(onSubmit)}>
-            <Input label="Game name" {...form.register('gameName', { required: 'Game name is required.' })} />
-            <Input label="Operating start" type="time" {...form.register('operatingHoursStart')} />
-            <Input label="Operating end" type="time" {...form.register('operatingHoursEnd')} />
+            <Input
+              label="Game name"
+              error={form.formState.errors.gameName?.message}
+              {...form.register('gameName', {
+                required: 'Game name is required.',
+                validate: (value) => value.trim().length > 0 || 'Game name is required.'
+              })}
+            />
+            <Input
+              label="Operating start"
+              type="time"
+              error={form.formState.errors.operatingHoursStart?.message}
+              {...form.register('operatingHoursStart', { required: 'Operating start is required.' })}
+            />
+            <Input
+              label="Operating end"
+              type="time"
+              error={form.formState.errors.operatingHoursEnd?.message}
+              {...form.register('operatingHoursEnd', {
+                required: 'Operating end is required.',
+                validate: (value) => {
+                  const start = form.getValues('operatingHoursStart')
+                  if (!start || !value) {
+                    return true
+                  }
+                  return value > start || 'Operating end must be later than operating start.'
+                }
+              })}
+            />
             <Input
               label="Slot duration (minutes)"
               type="number"
-              {...form.register('slotDurationMinutes', { valueAsNumber: true })}
+              error={form.formState.errors.slotDurationMinutes?.message}
+              {...form.register('slotDurationMinutes', {
+                valueAsNumber: true,
+                required: 'Slot duration is required.',
+                min: { value: 5, message: 'Slot duration must be at least 5 minutes.' }
+              })}
             />
             <Input
               label="Max players per slot"
               type="number"
-              {...form.register('maxPlayersPerSlot', { valueAsNumber: true })}
+              error={form.formState.errors.maxPlayersPerSlot?.message}
+              {...form.register('maxPlayersPerSlot', {
+                valueAsNumber: true,
+                required: 'Max players is required.',
+                min: { value: 1, message: 'Max players must be at least 1.' }
+              })}
             />
             <div className="md:col-span-2">
               <Button type="submit" disabled={createGame.isPending || updateGame.isPending}>
@@ -148,8 +189,29 @@ export const GameAdminPage = () => {
             <h4 className="text-sm font-semibold text-slate-800">Generate slots</h4>
             <p className="text-xs text-slate-500">Generate slots for a date range using the selected game settings.</p>
             <div className="mt-3 grid gap-3 md:grid-cols-2">
-              <Input label="Start date" type="date" {...form.register('generateStartDate')} />
-              <Input label="End date" type="date" {...form.register('generateEndDate')} />
+              <Input
+                label="Start date"
+                type="date"
+                error={form.formState.errors.generateStartDate?.message}
+                {...form.register('generateStartDate', { required: 'Start date is required.' })}
+              />
+              <Input
+                label="End date"
+                type="date"
+                error={form.formState.errors.generateEndDate?.message}
+                {...form.register('generateEndDate', {
+                  required: 'End date is required.',
+                  validate: (value) => {
+                    const start = form.getValues('generateStartDate')
+                    if (!start || !value) {
+                      return true
+                    }
+                    return new Date(value) >= new Date(start)
+                      ? true
+                      : 'End date must be on or after start date.'
+                  }
+                })}
+              />
             </div>
             <div className="mt-3">
               <Button type="button" onClick={onGenerateSlots} disabled={generateSlots.isPending}>

@@ -16,6 +16,8 @@ type NotificationItem = {
 export const NotificationsPage = () => {
   const { data, isLoading, isError, refetch } = useNotifications()
   const markMutation = useMarkNotification()
+  const cardGridClass =
+    'grid gap-3 grid-cols-[repeat(auto-fill,minmax(280px,320px))] justify-center sm:justify-start'
 
   const handleToggle = async (notificationId: number, isRead: boolean) => {
     await markMutation.mutateAsync({ notificationId, isRead })
@@ -39,7 +41,7 @@ export const NotificationsPage = () => {
       ) : null}
 
       {data?.length ? (
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <div className={cardGridClass}>
           {(data as NotificationItem[]).map((item) => (
             <Card key={item.notificationId} className="space-y-3 p-4">
               <div className="flex items-start justify-between gap-3">
