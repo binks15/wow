@@ -15,7 +15,6 @@ type TreeNodeProps = {
   node: OrgChartNode;
   selectedUserId?: number;
   onSelect: (userId: number) => void;
-  depth?: number;
 };
 
 const getInitials = (fullName: string) => {
@@ -29,40 +28,63 @@ const OrgTreeNode = ({
   node,
   selectedUserId,
   onSelect,
-  depth = 0,
 }: TreeNodeProps) => {
   const isSelected = node.id === selectedUserId;
-  const hoverText = `${node.fullName}${node.designation ? ` • ${node.designation}` : ""}`;
 
   return (
-    <div className={depth === 0 ? "" : "ml-6 border-l border-slate-300 pl-5"}>
-      <div className="flex items-center gap-2">
-        {depth > 0 ? <span className="h-px w-4 bg-slate-300" /> : null}
+    <div className="flex flex-col items-center">
+      <div className="group relative">
         <button
           type="button"
-          title={hoverText}
-          className={`flex h-10 w-10 items-center justify-center rounded-full border text-xs font-semibold transition ${
+          className={`flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border text-xs font-semibold transition ${
             isSelected
-              ? "border-brand-500 bg-brand-600 text-white"
-              : "border-slate-300 bg-white text-slate-700 hover:border-brand-300 hover:bg-brand-50"
+              ? "border-brand-500 ring-2 ring-brand-200"
+              : "border-slate-300 hover:border-brand-300"
           }`}
           onClick={() => onSelect(node.id)}
         >
-          {getInitials(node.fullName)}
+          {node.profilePhotoUrl ? (
+            <img
+              src={node.profilePhotoUrl}
+              alt={node.fullName}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <span
+              className={`flex h-full w-full items-center justify-center ${
+                isSelected ? "bg-brand-600 text-white" : "bg-white text-slate-700"
+              }`}
+            >
+              {getInitials(node.fullName)}
+            </span>
+          )}
         </button>
+
+        <div className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 hidden w-56 -translate-x-1/2 rounded-md border border-slate-200 bg-white p-2 text-left shadow-sm group-hover:block">
+          <p className="text-sm font-semibold text-slate-900">{node.fullName}</p>
+          <p className="text-xs text-slate-600">{node.designation || "No designation"}</p>
+          <p className="text-xs text-slate-500">{node.department || "No department"}</p>
+        </div>
       </div>
 
       {node.directReports.length ? (
-        <div className="mt-3 space-y-3">
-          {node.directReports.map((child) => (
-            <OrgTreeNode
-              key={child.id}
-              node={child}
-              selectedUserId={selectedUserId}
-              onSelect={onSelect}
-              depth={depth + 1}
-            />
-          ))}
+        <div className="mt-2 flex w-full flex-col items-center">
+          <div className="h-5 w-px bg-slate-300" />
+          <div className="relative flex flex-wrap justify-center gap-x-6 gap-y-5 pt-3">
+            {node.directReports.length > 1 ? (
+              <div className="pointer-events-none absolute left-10 right-10 top-0 h-px bg-slate-300" />
+            ) : null}
+            {node.directReports.map((child) => (
+              <div key={child.id} className="flex flex-col items-center">
+                <div className="h-3 w-px bg-slate-300" />
+                <OrgTreeNode
+                  node={child}
+                  selectedUserId={selectedUserId}
+                  onSelect={onSelect}
+                />
+              </div>
+            ))}
+          </div>
         </div>
       ) : null}
     </div>
@@ -152,7 +174,7 @@ export const OrgChartPage = () => {
               Organization tree
             </h3>
             <p className="text-xs text-slate-500">
-              Click a node to focus that employee's tree.
+              Hover a node to see name, designation, and department.
             </p>
           </div>
           <div className="overflow-x-auto rounded-lg border border-slate-200 bg-slate-50 p-4">
