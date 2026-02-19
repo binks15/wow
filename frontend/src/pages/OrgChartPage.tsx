@@ -9,19 +9,12 @@ import { AsyncSearchableSelect } from "../components/ui/AsyncSearchableSelect";
 import { useAuth } from "../hooks/useAuth";
 import { useOrgChart } from "../hooks/useOrgChart";
 import { useEmployeeSearch } from "../hooks/useEmployeeSearch";
-import type { OrgChartNode } from "../types/org-chart";
+import type { OrgChartNode, OrgChartUser } from "../types/org-chart";
 
 type TreeNodeProps = {
   node: OrgChartNode;
   selectedUserId?: number;
   onSelect: (userId: number) => void;
-};
-
-const getInitials = (fullName: string) => {
-  const parts = fullName.trim().split(/\s+/).filter(Boolean);
-  if (!parts.length) return "?";
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
 };
 
 const OrgTreeNode = ({
@@ -33,46 +26,36 @@ const OrgTreeNode = ({
 
   return (
     <div className="flex flex-col items-center">
-      <div className="group relative">
-        <button
-          type="button"
-          className={`flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border text-xs font-semibold transition ${
-            isSelected
-              ? "border-brand-500 ring-2 ring-brand-200"
-              : "border-slate-300 hover:border-brand-300"
-          }`}
-          onClick={() => onSelect(node.id)}
-        >
-          {node.profilePhotoUrl ? (
-            <img
-              src={node.profilePhotoUrl}
-              alt={node.fullName}
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <span
-              className={`flex h-full w-full items-center justify-center ${
-                isSelected ? "bg-brand-600 text-white" : "bg-white text-slate-700"
-              }`}
-            >
-              {getInitials(node.fullName)}
+      <button
+        type="button"
+        className={`w-60 rounded-lg border p-3 text-left transition ${
+          isSelected
+            ? "border-brand-500 bg-brand-50 ring-2 ring-brand-200"
+            : "border-slate-300 bg-white hover:border-brand-300"
+        }`}
+        onClick={() => onSelect(node.id)}
+      >
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-slate-900">{node.fullName}</p>
+            <p className="truncate text-xs text-slate-600">{node.designation || "No designation"}</p>
+            <p className="truncate text-xs text-slate-500">{node.department || "No department"}</p>
+          </div>
+          {isSelected ? (
+            <span className="shrink-0 rounded-full bg-brand-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+              Selected
             </span>
-          )}
-        </button>
-
-        <div className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 hidden w-56 -translate-x-1/2 rounded-md border border-slate-200 bg-white p-2 text-left shadow-sm group-hover:block">
-          <p className="text-sm font-semibold text-slate-900">{node.fullName}</p>
-          <p className="text-xs text-slate-600">{node.designation || "No designation"}</p>
-          <p className="text-xs text-slate-500">{node.department || "No department"}</p>
+          ) : null}
         </div>
-      </div>
+        <p className="mt-2 truncate text-[11px] text-slate-500">{node.email}</p>
+      </button>
 
       {node.directReports.length ? (
         <div className="mt-2 flex w-full flex-col items-center">
           <div className="h-5 w-px bg-slate-300" />
-          <div className="relative flex flex-wrap justify-center gap-x-6 gap-y-5 pt-3">
+          <div className="relative flex flex-nowrap justify-center gap-x-6 gap-y-5 pt-3">
             {node.directReports.length > 1 ? (
-              <div className="pointer-events-none absolute left-10 right-10 top-0 h-px bg-slate-300" />
+              <div className="pointer-events-none absolute left-16 right-16 top-0 h-px bg-slate-300" />
             ) : null}
             {node.directReports.map((child) => (
               <div key={child.id} className="flex flex-col items-center">
@@ -103,7 +86,7 @@ export const OrgChartPage = () => {
   const searchQueryResult = useEmployeeSearch(searchQuery.trim(), searchQueryEnabled);
 
   const searchResults = searchQueryResult.data ?? [];
-  const searchOptions = searchResults.map((user) => ({
+  const searchOptions = searchResults.map((user: OrgChartUser) => ({
     value: user.id,
     label: `${user.fullName} (${user.email})`,
   }));
@@ -117,7 +100,7 @@ export const OrgChartPage = () => {
     <section className="space-y-6">
       <Header
         title="Organization chart"
-        description="Tree view org chart. Hover on nodes to see name and designation."
+        description="Card-based org chart from root to all reporting levels."
         action={
           <div className="flex flex-wrap items-center gap-2">
             <Link
@@ -174,7 +157,7 @@ export const OrgChartPage = () => {
               Organization tree
             </h3>
             <p className="text-xs text-slate-500">
-              Hover a node to see name, designation, and department.
+              Click any card to focus and highlight that employee.
             </p>
           </div>
           <div className="overflow-x-auto rounded-lg border border-slate-200 bg-slate-50 p-4">
