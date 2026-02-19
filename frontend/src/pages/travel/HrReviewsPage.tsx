@@ -18,7 +18,7 @@ import { formatCurrency, formatDate } from '../../utils/format'
 import { FiEdit2, FiFilter } from 'react-icons/fi'
 
 type EmployeeOption = { id: number; fullName: string; email: string }
-type TravelOption = { travelId: number; travelName: string; startDate: string; endDate: string }
+type TravelOption = { travelId: number; travelName: string }
 type ExpenseProof = { proofId: number; fileName: string; filePath: string }
 type ReviewExpenseItem = {
   expenseId: number
@@ -79,6 +79,10 @@ export const HrReviewsPage = () => {
   const reviewExpense = useReviewExpense()
   const cardGridClass =
     'grid gap-3 grid-cols-[repeat(auto-fill,minmax(320px,420px))] justify-center sm:justify-start'
+  const editingExpense =
+    (hrExpenses.data as ReviewExpenseItem[] | undefined)?.find(
+      (expense) => expense.expenseId === editingExpenseId,
+    ) ?? null
  
   const handleReview = async (expenseId: number, values: ReviewFormValues) => {
     await reviewExpense.mutateAsync({
@@ -115,53 +119,63 @@ export const HrReviewsPage = () => {
         {showFilters ? (
           <>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-              <Controller
-                name="employeeId"
-                control={control}
-                render={({ field }) => (
-                  <AsyncSearchableSelect
-                    label="Employee"
-                    options={
-                      (employeeOptionsQuery.data ?? []).map((employee: EmployeeOption) => ({
-                        value: employee.id,
-                        label: `${employee.fullName} (${employee.email})`
-                      }))
-                    }
-                    value={field.value}
-                    onChange={(value) => {
-                      field.onChange(value)
-                      setValue('travelId', undefined)
-                    }}
-                    onSearch={setSearchQuery}
-                    isLoading={employeeOptionsQuery.isLoading}
-                  />
-                )}
-              />
-              <SearchableSelect
-                label="Travel"
-                options={
-                  travelOptionsQuery.data?.map((travel: TravelOption) => ({
-                    value: travel.travelId,
-                    label: `${travel.travelName} (${formatDate(travel.startDate)} → ${formatDate(travel.endDate)})`
-                  })) ?? []
-                }
-                value={filters.travelId ? Number(filters.travelId) : undefined}
-                placeholder={selectedEmployeeId ? 'Search…' : 'Select an employee first'}
-                onChange={(value) => setValue('travelId', value)}
-                disabled={!selectedEmployeeId}
-              />
-              <Select
-                label="Status"
-                value={filters.status ?? ''}
-                {...register('status')}
-              >
-                <option value="">All</option>
-                <option value="Submitted">Submitted</option>
-                <option value="Approved">Approved</option>
-                <option value="Rejected">Rejected</option>
-              </Select>
-              <Input label="From" type="date" {...register('from')} />
-              <Input label="To" type="date" {...register('to')} />
+              <div className="min-w-0">
+                <Controller
+                  name="employeeId"
+                  control={control}
+                  render={({ field }) => (
+                    <AsyncSearchableSelect
+                      label="Employee"
+                      options={
+                        (employeeOptionsQuery.data ?? []).map((employee: EmployeeOption) => ({
+                          value: employee.id,
+                          label: `${employee.fullName} (${employee.email})`
+                        }))
+                      }
+                      value={field.value}
+                      onChange={(value) => {
+                        field.onChange(value)
+                        setValue('travelId', undefined)
+                      }}
+                      onSearch={setSearchQuery}
+                      isLoading={employeeOptionsQuery.isLoading}
+                    />
+                  )}
+                />
+              </div>
+              <div className="min-w-0">
+                <SearchableSelect
+                  label="Travel"
+                  options={
+                    travelOptionsQuery.data?.map((travel: TravelOption) => ({
+                      value: travel.travelId,
+                      label: travel.travelName
+                    })) ?? []
+                  }
+                  value={filters.travelId ? Number(filters.travelId) : undefined}
+                  placeholder={selectedEmployeeId ? 'Search…' : 'Select an employee first'}
+                  onChange={(value) => setValue('travelId', value)}
+                  disabled={!selectedEmployeeId}
+                />
+              </div>
+              <div className="min-w-0">
+                <Select
+                  label="Status"
+                  value={filters.status ?? ''}
+                  {...register('status')}
+                >
+                  <option value="">All</option>
+                  <option value="Submitted">Submitted</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Rejected">Rejected</option>
+                </Select>
+              </div>
+              <div className="min-w-0">
+                <Input label="From" type="date" {...register('from')} />
+              </div>
+              <div className="min-w-0">
+                <Input label="To" type="date" {...register('to')} />
+              </div>
             </div>
             {!isValidFilterRange ? (
               <p className="text-sm text-red-600">From date must be on or before To date.</p>
@@ -249,17 +263,49 @@ export const HrReviewsPage = () => {
                 </div>
               ) : null}
 
-              {expense.status === 'Submitted' && editingExpenseId === expense.expenseId ? (
-                <div className="border-t border-slate-200 pt-3">
-                  <Review
-                    expenseId={expense.expenseId}
-                    onReview={handleReview}
-                    isPending={reviewExpense.isPending}
-                  />
-                </div>
-              ) : null}
             </Card>
           ))}
+        </div>
+      ) : null}
+
+      {editingExpense ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setEditingExpenseId(null)}
+        >
+          <Card
+            className="w-full max-w-lg space-y-4 p-5"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-base font-semibold text-slate-900">Give review</h3>
+                <p className="text-xs text-slate-500">
+                  {editingExpense.employeeName || 'Employee'} • {formatCurrency(editingExpense.amount, editingExpense.currency)} • {formatDate(editingExpense.expenseDate)}
+                </p>
+              </div>
+              <button
+                type="button"
+                className="rounded-md border border-slate-200 px-2 py-1 text-xs font-medium text-slate-600 hover:border-brand-200 hover:bg-brand-50"
+                onClick={() => setEditingExpenseId(null)}
+              >
+                Close
+              </button>
+            </div>
+
+            <Review
+              expenseId={editingExpense.expenseId}
+              onReview={async (expenseId, values) => {
+                await handleReview(expenseId, values)
+                setEditingExpenseId(null)
+              }}
+              isPending={reviewExpense.isPending}
+              variant="modal"
+              onCancel={() => setEditingExpenseId(null)}
+            />
+          </Card>
         </div>
       ) : null}
  
