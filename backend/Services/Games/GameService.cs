@@ -4,33 +4,23 @@ using backend.Repositories.Games;
 
 namespace backend.Services.Games;
 
-/// <summary>
-/// Manages game details and each user's game interests.
-/// </summary>
 public class GameService
 {
     private readonly IGameRepository _repository;
 
-    /// <summary>
-    /// Initializes the game service with the repository used to read and write game data.
-    /// </summary>
     public GameService(IGameRepository repository)
     {
         _repository = repository;
     }
 
-    /// <summary>
-    /// Returns all games available in the system.
-    /// </summary>
+    // return all games detail 
     public async Task<IReadOnlyCollection<GameDto>> GetAllAsync()
     {
         var games = await _repository.GetAllAsync();
         return games.Select(MapGame).ToList();
     }
 
-    /// <summary>
-    /// Returns one game by id and throws an error when the game does not exist.
-    /// </summary>
+    // return game by id
     public async Task<GameDto> GetByIdAsync(long gameId)
     {
         var game = await _repository.GetByIdAsync(gameId);
@@ -42,9 +32,7 @@ public class GameService
         return MapGame(game);
     }
 
-    /// <summary>
-    /// Validates input and creates a new game with operating hours, slot duration, and slot capacity.
-    /// </summary>
+    // create a new game
     public async Task<GameDto> CreateAsync(GameCreateDto dto)
     {
         ValidateGame(dto.GameName, dto.OperatingHoursStart, dto.OperatingHoursEnd, dto.SlotDurationMinutes, dto.MaxPlayersPerSlot);
@@ -64,9 +52,7 @@ public class GameService
         return MapGame(game);
     }
 
-    /// <summary>
-    /// Updates only the provided game fields, saves changes, and returns the updated game.
-    /// </summary>
+    // update game
     public async Task<GameDto> UpdateAsync(long gameId, GameUpdateDto dto)
     {
 
@@ -101,9 +87,7 @@ public class GameService
         return MapGame(game);
     }
 
-    /// <summary>
-    /// Returns all games with a true or false flag showing whether the user is interested in each game.
-    /// </summary>
+    // return user's games interest
     public async Task<IReadOnlyCollection<GameInterestDto>> GetUserInterestsAsync(long userId)
     {
         var games = await _repository.GetAllAsync();
@@ -117,9 +101,7 @@ public class GameService
         )).ToList();
     }
 
-    /// <summary>
-    /// Toggles the user's interest for selected games, turns off interest for unselected games, and returns updated interest status.
-    /// </summary>
+    // update or create a interest for a game
     public async Task<IReadOnlyCollection<GameInterestDto>> UpdateUserInterestsAsync(long userId, IReadOnlyCollection<long> gameIds)
     {
         var distinctIds = gameIds.Distinct().ToList();
@@ -170,9 +152,7 @@ public class GameService
         return await GetUserInterestsAsync(userId);
     }
 
-    /// <summary>
-    /// Validates core game settings before create or update operations.
-    /// </summary>
+    // validations for a game
     private static void ValidateGame(string name, TimeSpan start, TimeSpan end, int slotDurationMinutes, int maxPlayersPerSlot)
     {
         if (string.IsNullOrWhiteSpace(name))
@@ -196,9 +176,6 @@ public class GameService
         }
     }
 
-    /// <summary>
-    /// Maps a game entity to the response DTO used by API consumers.
-    /// </summary>
     private static GameDto MapGame(Game game)
     {
         return new GameDto(

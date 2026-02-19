@@ -5,18 +5,12 @@ using backend.Repositories.Games;
 
 namespace backend.Services.Games;
 
-/// <summary>
-/// Validates, creates, and cancels user requests for game slots.
-/// </summary>
-public class GameRequestService
+public class GameRequestService 
 {
     private readonly IGameRequestRepository _repository;
     private readonly GameAllocationService _allocationService;
     private readonly GameBookingService _bookingService;
 
-    /// <summary>
-    /// Initializes request service dependencies for slot validation, allocation, and cancellation handling.
-    /// </summary>
     public GameRequestService(
         IGameRequestRepository repository,
         GameAllocationService allocationService,
@@ -27,9 +21,7 @@ public class GameRequestService
         _bookingService = bookingService;
     }
 
-    /// <summary>
-    /// Validates all request rules, creates a slot request, and runs immediate allocation for near-term slots.
-    /// </summary>
+    // it first check all validation and then add slot request.if request is for immediate slot then it booked immediately
     public async Task<GameSlotRequestDto> RequestSlotAsync(long gameId, long slotId, long requesterId, IReadOnlyCollection<long> participantIds)
     {
         var slot = await _repository.GetSlotWithGameAsync(gameId, slotId);
@@ -74,11 +66,14 @@ public class GameRequestService
         }
 
         var bookingDate = slot.StartTime.Date;
-        var hasBooking = await _repository.HasBookingForDateAsync(requestUserIds, bookingDate);
-        if (hasBooking)
-        {
-            throw new ArgumentException("One or more participants already have a booking for this day.");
-        }
+
+        // validation if we want to restrict employee to play only one game per day.
+
+        // var hasBooking = await _repository.HasBookingForDateAsync(requestUserIds, bookingDate);
+        // if (hasBooking)
+        // {
+        //     throw new ArgumentException("One or more participants already have a booking for this day.");
+        // }
 
         var hasActiveRequest = await _repository.HasActiveRequestForDateAsync(requestUserIds, bookingDate);
         if (hasActiveRequest)
@@ -121,9 +116,7 @@ public class GameRequestService
         );
     }
 
-    /// <summary>
-    /// Cancels a user's request and also cancels booking if that request was already assigned.
-    /// </summary>
+    // cancel requests and if request is already been booked then cancels booking also.
     public async Task CancelRequestAsync(long requestId, long requesterId)
     {
         var request = await _repository.GetSlotRequestByIdAsync(requestId);
@@ -153,9 +146,7 @@ public class GameRequestService
         await _repository.SaveAsync();
     }
 
-    /// <summary>
-    /// Returns active requests of a user in a date range with game, slot, and participant details.
-    /// </summary>
+    // return user's requests in a given date rannge
     public async Task<IReadOnlyCollection<GameSlotRequestSummaryDto>> GetMyRequestsAsync(long userId, DateTime from, DateTime to)
     {
         var requests = await _repository.GetActiveRequestsForUserAsync(userId, from, to);

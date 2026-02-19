@@ -5,26 +5,19 @@ using backend.Repositories.Games;
 
 namespace backend.Services.Games;
 
-/// <summary>
-/// Handles booking cancellation and returns booking details for users.
-/// </summary>
+
 public class GameBookingService
 {
     private readonly IGameBookingRepository _repository;
     private readonly GameAllocationService _allocationService;
 
-    /// <summary>
-    /// Initializes booking service dependencies for booking retrieval, cancellation, and waitlist refill.
-    /// </summary>
     public GameBookingService(IGameBookingRepository repository, GameAllocationService allocationService)
     {
         _repository = repository;
         _allocationService = allocationService;
     }
 
-    /// <summary>
-    /// Cancels a booking by booking id after confirming the requester is part of that booking.
-    /// </summary>
+    // cancel booking by booking id
     public async Task CancelBookingAsync(long bookingId, long requesterId)
     {
         var booking = await _repository.GetBookingWithDetailsAsync(bookingId);
@@ -43,9 +36,7 @@ public class GameBookingService
         await CancelBookingCoreAsync(booking);
     }
 
-    /// <summary>
-    /// Cancels the active booking linked to a slot when the requester belongs to that booking.
-    /// </summary>
+    // cancel booking by slot id
     public async Task CancelBookingBySlotAsync(long slotId, long requesterId)
     {
         var booking = await _repository.GetActiveBookingBySlotIdAsync(slotId);
@@ -63,9 +54,7 @@ public class GameBookingService
         await CancelBookingCoreAsync(booking);
     }
 
-    /// <summary>
-    /// Returns the current user's bookings in a date range including participant employee details.
-    /// </summary>
+    // returns the current user's bookings in a date range
     public async Task<IReadOnlyCollection<GameBookingDto>> GetMyBookingsAsync(long userId, DateTime fromUtc, DateTime toUtc)
     {
         var bookings = await _repository.GetBookingsForUserAsync(userId, fromUtc, toUtc);
@@ -103,9 +92,7 @@ public class GameBookingService
         }).ToList();
     }
 
-    /// <summary>
-    /// Applies cancellation updates and tries to refill the slot from waitlisted requests.
-    /// </summary>
+    // it update status and then try to allocate cancel slot next person
     private async Task CancelBookingCoreAsync(GameBooking booking)
     {
         if (booking.Status == BookingStatus.Cancelled)

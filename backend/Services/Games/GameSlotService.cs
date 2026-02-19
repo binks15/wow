@@ -5,24 +5,16 @@ using backend.Repositories.Games;
 
 namespace backend.Services.Games;
 
-/// <summary>
-/// Generates game slots and provides slot lists with current availability.
-/// </summary>
 public class GameSlotService
 {
     private readonly IGameSlotRepository _repository;
 
-    /// <summary>
-    /// Initializes slot service dependencies used to generate and query game slots.
-    /// </summary>
     public GameSlotService(IGameSlotRepository repository)
     {
         _repository = repository;
     }
 
-    /// <summary>
-    /// Generates missing slots for each day in the date range based on game operating hours and slot duration.
-    /// </summary>
+    // generates list of slots for given date range based on operating hours and slot duration
     public async Task<IReadOnlyCollection<GameSlotDto>> GenerateSlotsAsync(long gameId, DateTime startDate, DateTime endDate)
     {
         var game = await _repository.GetGameByIdAsync(gameId);
@@ -85,9 +77,7 @@ public class GameSlotService
         return slots.Select(s => new GameSlotDto(s.SlotId, s.GameId, s.StartTime, s.EndTime, s.Status)).ToList();
     }
 
-    /// <summary>
-    /// Returns slots for one date and refreshes open or locked status using current local time.
-    /// </summary>
+    // it return slots for given date but check current time and based on that update status of slot
     public async Task<IReadOnlyCollection<GameSlotDto>> GetSlotsForDateAsync(long gameId, DateTime date)
     {
         var slots = await _repository.GetSlotsForDateAsync(gameId, date);
@@ -107,9 +97,7 @@ public class GameSlotService
         return slots.Select(s => new GameSlotDto(s.SlotId, s.GameId, s.StartTime, s.EndTime, s.Status)).ToList();
     }
 
-    /// <summary>
-    /// Returns upcoming slots with participant details and updates real-time availability before responding.
-    /// </summary>
+    // give detail about upcoming slots
     public async Task<IReadOnlyCollection<GameSlotSummaryDto>> GetUpcomingSlotsAsync(long gameId, DateTime fromUtc, DateTime toUtc)
     {
         var slots = await _repository.GetSlotsInRangeAsync(gameId, fromUtc, toUtc);
