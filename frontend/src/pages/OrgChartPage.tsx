@@ -10,67 +10,63 @@ import { useAuth } from "../hooks/useAuth";
 import { useOrgChart } from "../hooks/useOrgChart";
 import { useEmployeeSearch } from "../hooks/useEmployeeSearch";
 import type { OrgChartNode } from "../types/org-chart";
-import { FaRegUser } from "react-icons/fa";
 
-type OrgChartNodeProps = {
+type TreeNodeProps = {
   node: OrgChartNode;
+  selectedUserId?: number;
   onSelect: (userId: number) => void;
-  isSelected?: boolean;
+  depth?: number;
 };
 
-const OrgChartNodeCard = ({ node, onSelect, isSelected = false }: OrgChartNodeProps) => {
-  const meta = [node.department, node.designation].filter(Boolean).join(" • ");
+const getInitials = (fullName: string) => {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+};
+
+const OrgTreeNode = ({
+  node,
+  selectedUserId,
+  onSelect,
+  depth = 0,
+}: TreeNodeProps) => {
+  const isSelected = node.id === selectedUserId;
+  const hoverText = `${node.fullName}${node.designation ? ` • ${node.designation}` : ""}`;
 
   return (
-    <button
-      type="button"
-      className={`w-full rounded-lg border p-3 text-left transition ${
-        isSelected
-          ? "border-brand-400 bg-brand-50 ring-1 ring-brand-200"
-          : "border-slate-200 bg-white hover:border-brand-200"
-      }`}
-      onClick={() => onSelect(node.id)}
-    >
-      <div className="flex items-center gap-3">
-        {node.profilePhotoUrl ? (
-          <img
-            src={node.profilePhotoUrl}
-            alt={node.fullName}
-            className="h-10 w-10 rounded-full border border-slate-200 object-cover"
-          />
-        ) : (
-          <div className="flex h-10 w-10 items-center justify-center rounded-full border border-dashed border-slate-300 text-xs text-slate-400">
-            <FaRegUser />
-          </div>
-        )}
-        <div>
-          <p className="text-sm font-semibold text-slate-900">
-            {node.fullName}
-          </p>
-          <p className="text-xs text-slate-500">{node.email}</p>
-          {meta ? <p className="text-xs text-slate-500">{meta}</p> : null}
-        </div>
+    <div className={depth === 0 ? "" : "ml-6 border-l border-slate-300 pl-5"}>
+      <div className="flex items-center gap-2">
+        {depth > 0 ? <span className="h-px w-4 bg-slate-300" /> : null}
+        <button
+          type="button"
+          title={hoverText}
+          className={`flex h-10 w-10 items-center justify-center rounded-full border text-xs font-semibold transition ${
+            isSelected
+              ? "border-brand-500 bg-brand-600 text-white"
+              : "border-slate-300 bg-white text-slate-700 hover:border-brand-300 hover:bg-brand-50"
+          }`}
+          onClick={() => onSelect(node.id)}
+        >
+          {getInitials(node.fullName)}
+        </button>
       </div>
-    </button>
+
+      {node.directReports.length ? (
+        <div className="mt-3 space-y-3">
+          {node.directReports.map((child) => (
+            <OrgTreeNode
+              key={child.id}
+              node={child}
+              selectedUserId={selectedUserId}
+              onSelect={onSelect}
+              depth={depth + 1}
+            />
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
-};
-
-const findPathToUser = (
-  node: OrgChartNode,
-  targetId: number,
-): OrgChartNode[] | null => {
-  if (node.id === targetId) {
-    return [node];
-  }
-
-  for (const child of node.directReports) {
-    const childPath = findPathToUser(child, targetId);
-    if (childPath) {
-      return [node, ...childPath];
-    }
-  }
-
-  return null;
 };
 
 export const OrgChartPage = () => {
@@ -90,21 +86,6 @@ export const OrgChartPage = () => {
     label: `${user.fullName} (${user.email})`,
   }));
 
-  const orgPath = (() => {
-    if (!orgChartQuery.data) {
-      return [];
-    }
-
-    const targetId = selectedUserId ?? orgChartQuery.data.id;
-    return findPathToUser(orgChartQuery.data, targetId) ?? [orgChartQuery.data];
-  })();
-
-  const selectedNode = orgPath.length ? orgPath[orgPath.length - 1] : undefined;
-  const parentNode = orgPath.length > 1 ? orgPath[orgPath.length - 2] : undefined;
-  const siblings = parentNode && selectedNode
-    ? parentNode.directReports.filter((user) => user.id !== selectedNode.id)
-    : [];
-
   const handleSelectUser = (userIdValue: number) => {
     setSelectedUserId(userIdValue);
     setSearchQuery("");
@@ -114,7 +95,7 @@ export const OrgChartPage = () => {
     <section className="space-y-6">
       <Header
         title="Organization chart"
-        description="Explore reporting lines, direct reports, and siblings."
+        description="Tree view org chart. Hover on nodes to see name and designation."
         action={
           <div className="flex flex-wrap items-center gap-2">
             <Link
@@ -168,45 +149,20 @@ export const OrgChartPage = () => {
         <Card className="space-y-4 p-4">
           <div>
             <h3 className="text-base font-semibold text-slate-900">
-              Reporting path
+              Organization tree
             </h3>
             <p className="text-xs text-slate-500">
-              Click any person to focus their organization chain.
+              Click a node to focus that employee's tree.
             </p>
           </div>
-          <div className="mx-auto w-full max-w-2xl space-y-1">
-            {orgPath.map((node, index) => (
-              <div key={node.id} className="flex flex-col items-center">
-                {index > 0 ? <div className="h-5 w-px bg-slate-300" /> : null}
-                <OrgChartNodeCard
-                  node={node}
-                  onSelect={handleSelectUser}
-                  isSelected={node.id === selectedUserId}
-                />
-              </div>
-            ))}
-          </div>
-
-          <div className="space-y-2 border-t border-slate-200 pt-3">
-            <h4 className="text-sm font-semibold text-slate-900">Siblings</h4>
-            {siblings.length ? (
-              <div className="grid gap-2 sm:grid-cols-2">
-                {siblings.map((sibling) => (
-                  <OrgChartNodeCard
-                    key={sibling.id}
-                    node={sibling}
-                    onSelect={handleSelectUser}
-                    isSelected={sibling.id === selectedUserId}
-                  />
-                ))}
-              </div>
-            ) : (
-              <p className="text-xs text-slate-500">
-                {parentNode
-                  ? "No siblings found for the selected employee."
-                  : "Top-level employee has no siblings in this view."}
-              </p>
-            )}
+          <div className="overflow-x-auto rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <div className="min-w-[360px]">
+              <OrgTreeNode
+                node={orgChartQuery.data}
+                selectedUserId={selectedUserId}
+                onSelect={handleSelectUser}
+              />
+            </div>
           </div>
         </Card>
       ) : null}
