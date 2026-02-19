@@ -8,6 +8,22 @@ import type { EmployeeOption } from '../../types/employee'
 import type { TravelAssigned } from '../../types/travel'
 import type { DocumentFormValues } from '../../types/travel-document-forms'
 
+const allowedDocumentFileAccept = '.pdf,.jpg,.jpeg,application/pdf,image/jpeg'
+const allowedDocumentFileMessage = 'Only PDF and JPG/JPEG files are allowed.'
+
+const isAllowedDocumentFile = (file: File) => {
+  const fileType = file.type.toLowerCase()
+  const extension = file.name.toLowerCase().split('.').pop() ?? ''
+
+  return (
+    fileType === 'application/pdf' ||
+    fileType === 'image/jpeg' ||
+    extension === 'pdf' ||
+    extension === 'jpg' ||
+    extension === 'jpeg'
+  )
+}
+
 interface TravelDocumentUploadFormProps {
   form: UseFormReturn<DocumentFormValues>
   onSubmit: (values: DocumentFormValues) => void
@@ -29,7 +45,6 @@ export const TravelDocumentUploadForm = ({
   onSubmit,
   isHr,
   employeeOptions,
-  onSearch,
   isLoadingOptions,
   hrTravels,
   isLoadingHrTravels,
@@ -137,10 +152,22 @@ export const TravelDocumentUploadForm = ({
         <Input
           label="File"
           type="file"
+          accept={allowedDocumentFileAccept}
           error={errors.file?.message}
           {...register('file', {
             required: 'File is required.',
-            validate: (value) => (value?.length ?? 0) > 0 || 'File is required.'
+            validate: (value) => {
+              if ((value?.length ?? 0) === 0) {
+                return 'File is required.'
+              }
+
+              const file = value?.item(0)
+              if (!file) {
+                return 'File is required.'
+              }
+
+              return isAllowedDocumentFile(file) || allowedDocumentFileMessage
+            }
           })}
         />
         <div className="md:col-span-2">

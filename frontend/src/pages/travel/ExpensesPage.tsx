@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import { useForm } from "react-hook-form";
+import { useSearchParams } from "react-router-dom";
 import { Card } from "../../components/ui/Card";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { Spinner } from "../../components/ui/Spinner";
@@ -44,6 +45,7 @@ export const ExpensesPage = () => {
     "success" | "error"
   >("success");
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchParams] = useSearchParams();
 
   const filterForm = useForm<ExpenseFormFilters>({
     defaultValues: {
@@ -64,6 +66,19 @@ export const ExpensesPage = () => {
       expenseDate: "",
     },
   });
+
+  useEffect(() => {
+    const travelParam = searchParams.get("travelId");
+    const employeeParam = searchParams.get("employeeId");
+
+    if (travelParam) {
+      filterForm.setValue("travelId", Number(travelParam));
+    }
+
+    if (employeeParam) {
+      filterForm.setValue("employeeId", Number(employeeParam));
+    }
+  }, [filterForm, searchParams]);
 
   // Data fetching
   const filters = filterForm.watch();

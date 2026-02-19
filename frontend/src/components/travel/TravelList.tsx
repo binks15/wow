@@ -22,6 +22,7 @@ interface TravelListProps {
   onDelete: (travelId: number) => void
   onCancelEdit: () => void
   onViewDocuments: (travelId: number) => void
+  onViewExpenses: (travelId: number) => void
   isUpdating: boolean
   employeeOptions: EmployeeOption[]
   onSearch: (query: string) => void
@@ -40,6 +41,7 @@ export const TravelList = ({
   onDelete,
   onCancelEdit,
   onViewDocuments,
+  onViewExpenses,
   isUpdating,
   employeeOptions,
   onSearch,
@@ -56,8 +58,6 @@ export const TravelList = ({
 
   const editingTravel = travels.find((travel) => travel.travelId === editingTravelId)
   const startDateValue = watch('startDate')
-  const listGridClass =
-    'grid gap-4 grid-cols-[repeat(auto-fill,minmax(280px,320px))] justify-center sm:justify-start'
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -72,7 +72,7 @@ export const TravelList = ({
 
   return (
     <>
-      <div className={listGridClass}>
+      <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(280px,320px))] justify-center sm:justify-start">
         {travels.map((travel) => (
           <Card key={travel.travelId} className="space-y-3">
             <div className="flex items-start justify-between">
@@ -93,6 +93,13 @@ export const TravelList = ({
                 onClick={() => onViewDocuments(travel.travelId)}
               >
                 View documents
+              </button>
+              <button
+                className="text-sm font-semibold text-brand-600 hover:text-brand-700"
+                type="button"
+                onClick={() => onViewExpenses(travel.travelId)}
+              >
+                View expenses
               </button>
               {isHr ? (
                 <>

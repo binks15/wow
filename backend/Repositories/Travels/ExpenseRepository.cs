@@ -24,6 +24,9 @@ public class ExpenseRepository : IExpenseRepository
     {
         return await _db.Expenses
             // .Include(e => e.Assignment)
+            .Include(e => e.Employee)
+            .Include(e => e.Category)
+            .Include(e => e.Reviewer)
             .Include(e => e.ProofDocuments)
             .FirstOrDefaultAsync(e => e.ExpenseId == expenseId);
     }
@@ -32,6 +35,9 @@ public class ExpenseRepository : IExpenseRepository
     {
         return await _db.Expenses
             // .Include(e => e.Assignment)
+            .Include(e => e.Employee)
+            .Include(e => e.Category)
+            .Include(e => e.Reviewer)
             .Include(e => e.ProofDocuments)
             .Where(e => e.EmployeeId == employeeId)
             .OrderByDescending(e => e.ExpenseDate)
@@ -42,6 +48,9 @@ public class ExpenseRepository : IExpenseRepository
     {
         var query = _db.Expenses
             // .Include(e => e.Assignment)
+            .Include(e => e.Employee)
+            .Include(e => e.Category)
+            .Include(e => e.Reviewer)
             .Include(e => e.ProofDocuments)
             .AsQueryable();
 
@@ -82,7 +91,7 @@ public class ExpenseRepository : IExpenseRepository
 
     public async Task<decimal> GetTotalClaimedAmountAsync(long travelId)
     {
-        return await _db.Expenses.Where(e=> e.TravelId == travelId).Select(e => (decimal?)e.Amount).SumAsync() ?? 0m;
+        return await _db.Expenses.Where(e => e.TravelId == travelId).Select(e => (decimal?)e.Amount).SumAsync() ?? 0m;
     }
 
     public async Task DeleteAsync(Expense expense)

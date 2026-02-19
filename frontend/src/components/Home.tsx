@@ -44,22 +44,6 @@ export const Home = () => {
         Travels
       </NavLink>
       <NavLink
-        to="/expenses"
-        className={({ isActive }) =>
-          `${linkBase} ${isActive ? linkActive : ""}`
-        }
-      >
-        Expenses
-      </NavLink>
-      <NavLink
-        to="/documents"
-        className={({ isActive }) =>
-          `${linkBase} ${isActive ? linkActive : ""}`
-        }
-      >
-        Documents
-      </NavLink>
-      <NavLink
         to="/notifications"
         className={({ isActive }) =>
           `${linkBase} ${isActive ? linkActive : ""}`
@@ -83,22 +67,6 @@ export const Home = () => {
         }
       >
         Games
-      </NavLink>
-      <NavLink
-        to="/games/requests"
-        className={({ isActive }) =>
-          `${linkBase} ${isActive ? linkActive : ""}`
-        }
-      >
-        My game requests
-      </NavLink>
-      <NavLink
-        to="/games/upcoming"
-        className={({ isActive }) =>
-          `${linkBase} ${isActive ? linkActive : ""}`
-        }
-      >
-        Upcoming game bookings
       </NavLink>
       {isManager ? (
         <div className="mt-3 border-t border-slate-200 pt-3">

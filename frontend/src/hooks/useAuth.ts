@@ -1,5 +1,6 @@
 import { apiClient } from '../config/axios'
 import { useAppDispatch, useAppSelector } from '../config/hooks'
+import { queryClient } from '../config/queryClient'
 import { clearTokens } from '../features/auth/authSlice'
 import { parseJwt } from '../utils/jwt'
 
@@ -17,6 +18,7 @@ export const useAuth = () => {
         await apiClient.post('/api/v1/auth/logout', { accessToken })
       }
     } finally {
+      queryClient.clear()
       dispatch(clearTokens())
     }
   }

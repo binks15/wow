@@ -22,8 +22,6 @@ export const DashboardPage = () => {
   const pendingCount = hrExpenses.data?.length ?? 0;
   const employeeTravelCount = employeeTravels.data?.length ?? 0;
   const hrTravelCount = hrTravels.data?.length ?? 0;
-  const statGridClass =
-    "grid gap-4 grid-cols-[repeat(auto-fill,minmax(240px,280px))] justify-center sm:justify-start";
 
   return (
     <section className="space-y-6">
@@ -42,7 +40,7 @@ export const DashboardPage = () => {
         }
       />
 
-      <div className={statGridClass}>
+      <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(240px,280px))] justify-center sm:justify-start">
         {isEmployee ? (
           <StatCard
             label="Assigned travels"

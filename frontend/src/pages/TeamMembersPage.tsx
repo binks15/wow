@@ -27,7 +27,7 @@ export const TeamMembersPage = () => {
 
       {data?.length ? (
         <div className={cardGridClass}>
-          {data.map((member) => (
+          {data.map((member:any) => (
             <Card key={member.id} className="space-y-2">
               <div>
                 <h3 className="text-base font-semibold text-slate-900">{member.fullName}</h3>

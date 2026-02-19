@@ -3,9 +3,11 @@ import { useForm } from "react-hook-form";
 import { Card } from "../../components/ui/Card";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { Input } from "../../components/ui/Input";
+import { Button } from "../../components/ui/Button";
 import { Header } from "../../components/Header";
 import { Spinner } from "../../components/ui/Spinner";
 import { useExpenseCategories } from "../../hooks/travel/useExpenseConfig";
+import type { ExpenseCategory } from "../../types/expense-config";
 import {
   useCreateExpenseCategory,
 } from "../../hooks/travel/useExpenseConfigMutations";
@@ -55,13 +57,13 @@ export const ExpenseConfigPage = () => {
       />
 
       {message ? (
-        <Card>
+        <Card className="max-w-2xl">
           <p className="text-sm text-emerald-600">{message}</p>
         </Card>
       ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-1">
-        <Card className="space-y-4">
+      <div>
+        <Card className="max-w-2xl space-y-4 p-4">
           <div>
             <h3 className="text-base font-semibold text-slate-900">
               Create category
@@ -71,15 +73,16 @@ export const ExpenseConfigPage = () => {
             </p>
           </div>
           <form
-            className="space-y-4"
+            className="grid gap-3 sm:grid-cols-2"
             onSubmit={submitCategory(handleCreateCategory)}
           >
             <Input
               label="Category name"
+              placeholder="e.g. Food"
               error={categoryErrors.categoryName?.message}
               {...registerCategory("categoryName", {
                 required: "Category name is required.",
-                validate: (value) =>
+                validate: (value: string) =>
                   value.trim().length > 0 || "Category name is required.",
               })}
             />
@@ -87,6 +90,7 @@ export const ExpenseConfigPage = () => {
               label="Max amount per day"
               type="number"
               step="0.01"
+              placeholder="e.g. 1500"
               error={categoryErrors.maxAmountPerDay?.message}
               {...registerCategory("maxAmountPerDay", {
                 required: "Max amount is required.",
@@ -94,19 +98,21 @@ export const ExpenseConfigPage = () => {
                 min: { value: 0.01, message: "Amount must be positive." },
               })}
             />
-            <button
+            <div className="sm:col-span-2 sm:flex sm:justify-end">
+            <Button
               type="submit"
-              className="w-full rounded-md bg-brand-600 px-4 py-2 text-sm font-semibold bg-(--color-primary) hover:bg-brand-700 disabled:opacity-70"
+              className="w-full sm:w-auto"
               disabled={createCategory.isPending}
             >
               {createCategory.isPending ? "Saving..." : "Create category"}
-            </button>
+            </Button>
+            </div>
           </form>
         </Card>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-1">
-        <Card className="space-y-3">
+      <div>
+        <Card className="space-y-3 p-4">
           <h3 className="text-base font-semibold text-slate-900">
             Existing categories
           </h3>
@@ -121,16 +127,14 @@ export const ExpenseConfigPage = () => {
             </p>
           ) : null}
           {categoriesQuery.data?.length ? (
-            <div className="space-y-2">
-              {categoriesQuery.data.map((category) => (
+            <div className="grid gap-3 grid-cols-[repeat(auto-fill,minmax(240px,320px))] justify-center sm:justify-start">
+              {categoriesQuery.data.map((category: ExpenseCategory) => (
                 <div
                   key={category.categoryId}
-                  className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm"
                 >
-                  <span>{category.categoryName}</span>
-                  <span className="text-slate-500">
-                    Max {category.maxAmountPerDay}
-                  </span>
+                  <p className="font-medium text-slate-900">{category.categoryName}</p>
+                  <p className="mt-1 text-xs text-slate-500">Max per day: {category.maxAmountPerDay}</p>
                 </div>
               ))}
             </div>

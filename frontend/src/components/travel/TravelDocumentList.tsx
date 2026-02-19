@@ -3,6 +3,8 @@ import { Input } from '../ui/Input'
 import { formatDate } from '../../utils/format'
 import type { TravelDocument } from '../../types/document'
 
+const allowedDocumentFileAccept = '.pdf,.jpg,.jpeg,application/pdf,image/jpeg'
+
 export type TravelDocumentEdits = Record<
   number,
   {
@@ -72,6 +74,7 @@ export const TravelDocumentList = ({
                 <Input
                   label="Replace file"
                   type="file"
+                  accept={allowedDocumentFileAccept}
                   onChange={(event) =>
                     onEditChange(doc.documentId, 'file', event.target.files?.item(0) ?? null)
                   }

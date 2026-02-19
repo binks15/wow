@@ -63,6 +63,7 @@ export const Select = ({
   children,
   value,
   onChange,
+  name,
   disabled,
   placeholder,
   ...props
@@ -95,8 +96,8 @@ export const Select = ({
         onChange={(selected) => {
           const nextValue = selected?.value ?? "";
           const syntheticEvent = {
-            target: { value: nextValue },
-            currentTarget: { value: nextValue },
+            target: { name, value: nextValue },
+            currentTarget: { name, value: nextValue },
           } as ChangeEvent<HTMLSelectElement>;
           onChange?.(syntheticEvent);
         }}

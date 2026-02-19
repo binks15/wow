@@ -3,6 +3,22 @@ import { Input } from '../ui/Input'
 import { Select } from '../ui/Select'
 import { SearchableSelect } from '../ui/SearchableSelect'
 import { formatDate } from '../../utils/format'
+
+const allowedExpenseProofAccept = '.pdf,.jpg,.jpeg,application/pdf,image/jpeg'
+const allowedExpenseProofMessage = 'Only PDF and JPG/JPEG files are allowed.'
+
+const isAllowedExpenseProofFile = (file: File) => {
+  const fileType = file.type.toLowerCase()
+  const extension = file.name.toLowerCase().split('.').pop() ?? ''
+
+  return (
+    fileType === 'application/pdf' ||
+    fileType === 'image/jpeg' ||
+    extension === 'pdf' ||
+    extension === 'jpg' ||
+    extension === 'jpeg'
+  )
+}
  
 export type ExpenseFormValues = {
   assignId?: number
@@ -91,6 +107,7 @@ export const ExpenseSubmitForm = ({
         ) : null}
         <Select
           label="Category"
+          value={watch('categoryId') ?? ''}
           error={errors.categoryId?.message}
           {...register('categoryId', {
             required: 'Category is required.',
@@ -121,7 +138,7 @@ export const ExpenseSubmitForm = ({
           error={errors.currency?.message}
           {...register('currency', {
             required: 'Currency is required.',
-            validate: (value) => /^[A-Za-z]{3}$/.test(value.trim()) || 'Use a 3-letter currency code.'
+            validate: (value: string) => /^[A-Za-z]{3}$/.test(value.trim()) || 'Use a 3-letter currency code.'
           })}
         />
         <Input
@@ -130,7 +147,7 @@ export const ExpenseSubmitForm = ({
           error={errors.expenseDate?.message}
           {...register('expenseDate', {
             required: 'Date is required.',
-            validate: (value) => {
+            validate: (value: string) => {
               const assignment = assignments?.find((item) => item.assignId === Number(selectedAssignId))
  
               if (!assignment) {
@@ -154,10 +171,22 @@ export const ExpenseSubmitForm = ({
         <Input
           label="Proof file"
           type="file"
+          accept={allowedExpenseProofAccept}
           error={errors.proof?.message}
           {...register('proof', {
             required: 'Proof file is required.',
-            validate: (value) => (value?.length ?? 0) > 0 || 'Proof file is required.'
+            validate: (value: FileList) => {
+              if ((value?.length ?? 0) === 0) {
+                return 'Proof file is required.'
+              }
+
+              const file = value?.item(0)
+              if (!file) {
+                return 'Proof file is required.'
+              }
+
+              return isAllowedExpenseProofFile(file) || allowedExpenseProofMessage
+            }
           })}
         />
         <div className="md:col-span-2">

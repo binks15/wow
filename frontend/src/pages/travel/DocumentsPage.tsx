@@ -32,6 +32,21 @@ import {
 import { TravelDocumentUploadForm } from "../../components/travel/TravelDocumentUploadForm";
 import { TravelDocumentFiltersPanel } from "../../components/travel/TravelDocumentFiltersPanel";
 
+const allowedDocumentFileMessage = "Only PDF and JPG/JPEG files are allowed.";
+
+const isAllowedDocumentFile = (file: File) => {
+  const fileType = file.type.toLowerCase();
+  const extension = file.name.toLowerCase().split(".").pop() ?? "";
+
+  return (
+    fileType === "application/pdf" ||
+    fileType === "image/jpeg" ||
+    extension === "pdf" ||
+    extension === "jpg" ||
+    extension === "jpeg"
+  );
+};
+
 export const DocumentsPage = () => {
   const queryClient = useQueryClient();
   const { role, userId } = useAuth();
@@ -187,6 +202,11 @@ export const DocumentsPage = () => {
     field: "documentType" | "file",
     value: string | File | null,
   ) => {
+    if (field === "file" && value instanceof File && !isAllowedDocumentFile(value)) {
+      setMessage(allowedDocumentFileMessage);
+      return;
+    }
+
     setEditDocs((prev) => ({
       ...prev,
       [documentId]: {
